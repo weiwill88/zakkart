@@ -29,7 +29,7 @@
           style="margin-bottom: 20px"
         >
           <template #default>
-            已预置两个初始管理员手机号：<code>17521723946</code>、<code>13262515903</code>
+            已预置两个初始管理员手机号：<code>17521723946</code>、<code>13262515903</code>。供应商账号需先在供应商详情页的“联系人/成员”中创建。
           </template>
         </el-alert>
 
