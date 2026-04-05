@@ -41,6 +41,19 @@ export async function callCloudFunction(name, data) {
   return app.callFunction({ name, data })
 }
 
+export async function uploadCloudFile({ cloudPath, file }) {
+  const app = getCloudbaseApp()
+  return app.uploadFile({
+    cloudPath,
+    filePath: file
+  })
+}
+
+export async function getTempFileURLs(fileList) {
+  const app = getCloudbaseApp()
+  return app.getTempFileURL({ fileList })
+}
+
 async function ensureAnonymousAccessInternal() {
   const auth = getCloudbaseAuth()
   const loginState = await auth.getLoginState()

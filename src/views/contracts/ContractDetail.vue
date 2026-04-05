@@ -176,6 +176,7 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { fetchContractDetail, updateContract, exportContractWord, uploadSignedContract } from '../../services/contract'
 import { fetchBatchList, createBatch, updateBatch, deleteBatch } from '../../services/batch'
+import { uploadCloudFile } from '../../services/cloudbase'
 import { buildContractWord } from '../../utils/contractWord'
 
 const route = useRoute()
@@ -343,16 +344,14 @@ async function handleExportWord() {
 }
 
 async function handleUploadSigned(file) {
-  // For now, we use a placeholder approach
-  // In production, this would upload to cloud storage first
-  // Here we show how the flow works
-  ElMessage.info('请先将 PDF 上传到微信云存储，然后提供 fileID')
-
-  // Prompt for fileID (simplified - in real app would use cloud upload)
-  const fileId = prompt('请输入已上传到云存储的 PDF fileID:')
-  if (!fileId) return false
-
   try {
+    const timestamp = Date.now()
+    const safeName = (file.name || 'signed.pdf').replace(/[^\w.-]+/g, '_')
+    const uploadResult = await uploadCloudFile({
+      cloudPath: `contracts/signed/${route.params.id}/${timestamp}_${safeName}`,
+      file
+    })
+    const fileId = uploadResult.fileID || uploadResult.fileId
     await uploadSignedContract(route.params.id, fileId)
     ElMessage.success('已签署文件上传成功')
     await loadContract()

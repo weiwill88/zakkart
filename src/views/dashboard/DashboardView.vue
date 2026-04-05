@@ -8,8 +8,8 @@
       <el-col :span="8">
         <div class="stat-card">
           <div class="stat-label">当前阶段</div>
-          <div class="stat-value" style="color: var(--color-primary)">Phase 0</div>
-          <div class="stat-sub">基础设施、认证与正式工程骨架</div>
+          <div class="stat-value" style="color: var(--color-primary)">Phase 3</div>
+          <div class="stat-sub">阶段 2 待云端联调，阶段 3 已进入生产与验货</div>
         </div>
       </el-col>
       <el-col :span="8">
@@ -33,20 +33,20 @@
     <el-card shadow="never">
       <template #header>
         <div style="display: flex; justify-content: space-between; align-items: center">
-          <span style="font-weight: 600">阶段 0 已落地内容</span>
+          <span style="font-weight: 600">当前可验收主链路</span>
           <el-button text @click="loadHealth">刷新检查</el-button>
         </div>
       </template>
 
       <el-timeline>
-        <el-timeline-item timestamp="后端" placement="top">
-          单入口 `api` 云函数、统一响应格式、开发期短信登录、Token 签发/校验。
+        <el-timeline-item timestamp="阶段 2" placement="top">
+          下单生成、合同列表、合同详情、交付批次、Word 导出、已签 PDF 归档已完成，本次已收敛到后端 `order.generate` + 前端直传云存储。
         </el-timeline-item>
-        <el-timeline-item timestamp="PC 端" placement="top">
-          登录页、Pinia 鉴权 Store、CloudBase 调用封装、路由守卫、统一菜单框架。
+        <el-timeline-item timestamp="阶段 3" placement="top">
+          已新增 `status.markProduced`、`inspection.list/create`，PC 端“质检管理”已替换为真实待验货列表和验货提交页。
         </el-timeline-item>
         <el-timeline-item timestamp="小程序" placement="top">
-          云开发初始化与 API 封装入口，保留原型角色模式作为开发期兜底。
+          供应商首页、合同列表/详情、验货反馈页已接入真实 API，可查看生产任务并标记“已生产待验货”。
         </el-timeline-item>
       </el-timeline>
     </el-card>

@@ -266,9 +266,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { fetchProductList, fetchProductPartTypes } from '../../services/product'
-import { fetchOrgDetail } from '../../services/organization'
-import { createContract } from '../../services/contract'
+import { fetchProductList } from '../../services/product'
+import { updateContract } from '../../services/contract'
+import { generateOrder as generateOrderApi } from '../../services/order'
 import { buildContractWord } from '../../utils/contractWord'
 import { saveAs } from 'file-saver'
 import { Packer } from 'docx'
@@ -281,9 +281,6 @@ const skuRows = ref([])
 const contracts = ref([])
 const activeContract = ref('0')
 const savingAll = ref(false)
-
-// Part type cache
-const partTypeMap = ref({})
 
 const checkedSkus = computed(() => skuRows.value.filter(r => r.checked))
 const allocatedTotal = computed(() => checkedSkus.value.reduce((s, r) => s + (r.qty || 0), 0))
@@ -310,24 +307,6 @@ async function onProductChange(productId) {
     checked: true,
     qty: 0
   }))
-
-  // Fetch part types for BOM
-  const ptIds = new Set()
-  for (const sku of (product.skus || [])) {
-    for (const bom of (sku.bom_items || [])) {
-      ptIds.add(bom.part_type_id)
-    }
-  }
-  if (ptIds.size > 0) {
-    try {
-      const result = await fetchProductPartTypes(Array.from(ptIds))
-      const map = {}
-      for (const pt of (result.list || [])) { map[pt._id] = pt }
-      partTypeMap.value = map
-    } catch (e) {
-      console.error('Failed to fetch part types', e)
-    }
-  }
 }
 
 function selectAll() { skuRows.value.forEach(r => r.checked = true); recalcLastSku() }
@@ -354,98 +333,74 @@ function recalcLastSku() {
 // === Generate contracts ===
 async function generateOrder() {
   const checked = skuRows.value.filter(r => r.checked && r.qty > 0)
-  if (checked.length === 0) return
-
-  // BOM explosion → group by supplier
-  const supplierMap = {}
-
-  for (const sku of checked) {
-    for (const bom of (sku.bom_items || [])) {
-      const pt = partTypeMap.value[bom.part_type_id]
-      if (!pt || !pt.supplier_org_id) continue
-
-      const sid = pt.supplier_org_id
-      if (!supplierMap[sid]) {
-        supplierMap[sid] = { orgId: sid, orgName: pt.supplier_org_name || '', items: [] }
-      }
-
-      const qty = (bom.quantity || 1) * sku.qty
-      const existing = supplierMap[sid].items.find(
-        item => item.partName === (bom.part_name || pt.name) && item.skuId === sku.sku_id
-      )
-      if (existing) {
-        existing.totalQty += qty
-      } else {
-        supplierMap[sid].items.push({
-          skuId: sku.sku_id,
-          skuSpec: sku.spec || sku.sku_id,
-          partTypeId: bom.part_type_id,
-          partName: bom.part_name || pt.name || '',
-          variant: sku.spec || '',
-          unitQty: bom.quantity || 1,
-          totalQty: qty
-        })
-      }
-    }
+  if (checked.length === 0) {
+    ElMessage.warning('请先选择至少一个 SKU 并填写数量')
+    return
   }
 
-  // Fetch supplier orgs for full info
-  const supplierIds = Object.keys(supplierMap)
-  const orgCache = {}
-  for (const sid of supplierIds) {
-    try {
-      orgCache[sid] = await fetchOrgDetail(sid)
-    } catch (e) {
-      orgCache[sid] = null
-    }
+  try {
+    const result = await generateOrderApi({
+      productId: selectedProductId.value,
+      totalQty: totalQty.value,
+      skuAllocations: checked.map(item => ({
+        skuId: item.sku_id,
+        qty: item.qty
+      }))
+    })
+
+    contracts.value = (result.contracts || []).map(contract => {
+      const mergedItems = mergeItems((contract.items || []).map(item => ({
+        skuId: item.sku_id,
+        skuSpec: item.sku_spec,
+        partTypeId: item.part_type_id,
+        partName: item.part_name,
+        variant: item.sku_spec || '',
+        totalQty: item.quantity,
+        unitPrice: item.unit_price
+      })))
+      const deliveryCols = mergedItems.map(item => item.partName)
+
+      return {
+        orgId: contract.supplierOrgId,
+        contractNo: contract.contractNo,
+        supplierName: contract.supplierName || '',
+        legalPerson: contract.legalPerson || '',
+        creditCode: contract.creditCode || '',
+        address: contract.address || '',
+        phone: contract.phone || '',
+        productDesc: getProductDesc((contract.items || []).map(item => ({
+          partName: item.part_name
+        }))),
+        productItems: mergedItems.map(item => ({
+          partName: item.partName,
+          weight: '',
+          colors: item.colors,
+          qtyDetail: item.qtyDetail,
+          totalQty: item.totalQty,
+          unitPrice: item.unitPrice != null ? String(item.unitPrice) : '',
+          totalPrice: '',
+          sourceItems: item.sourceItems
+        })),
+        rawMaterials: '',
+        depositRate: '30',
+        balanceRate: '70',
+        bankName: contract.bankInfo?.bank_name || contract.supplierName || '',
+        bankAccount: contract.bankInfo?.bank_account || '',
+        bankBranch: contract.bankInfo?.bank_branch || '',
+        deliveryCols,
+        deliveryRows: [buildEmptyDeliveryRow(deliveryCols)],
+        _productId: contract.productId,
+        _productName: contract.productName,
+        _savedId: contract.contractId,
+        _items: contract.items || []
+      }
+    })
+
+    activeContract.value = '0'
+    ElMessage.success(`已生成 ${contracts.value.length} 份草稿合同`)
+  } catch (error) {
+    ElMessage.error(error.message || '生成订单失败')
   }
-
-  // Generate contract data
-  const now = new Date()
-  const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
-
-  contracts.value = Object.values(supplierMap).map((group, idx) => {
-    const org = orgCache[group.orgId] || {}
-    const mergedItems = mergeItems(group.items)
-
-    // Build delivery column headers from checked SKU variants
-    const deliveryCols = mergedItems.map(item => item.partName)
-
-    return {
-      orgId: group.orgId,
-      contractNo: `DX-${(idx + 1).toString().padStart(3, '0')}-CGHT-${dateStr}-${(idx + 1).toString().padStart(3, '0')}`,
-      supplierName: org.name || group.orgName || '',
-      legalPerson: org.legal_person || '',
-      creditCode: org.credit_code || '',
-      address: org.address || '',
-      phone: org.contact_phone || '',
-      productDesc: getProductDesc(group.items),
-      productItems: mergedItems.map(item => ({
-        partName: item.partName,
-        weight: '',
-        colors: item.colors,
-        qtyDetail: item.qtyDetail,
-        totalQty: item.totalQty,
-        unitPrice: '',
-        totalPrice: ''
-      })),
-      rawMaterials: '',
-      depositRate: '30',
-      balanceRate: '70',
-      bankName: org.bank_info?.bank_name || org.name || '',
-      bankAccount: org.bank_info?.bank_account || '',
-      bankBranch: org.bank_info?.bank_branch || '',
-      // Delivery plan
-      deliveryCols,
-      deliveryRows: [buildEmptyDeliveryRow(deliveryCols)],
-      // For saving
-      _productId: selectedProductId.value,
-      _productName: selectedProduct.value?.name_cn || '',
-      _savedId: null
-    }
-  })
-
-  activeContract.value = '0'
 }
 
 function mergeItems(items) {
@@ -453,17 +408,20 @@ function mergeItems(items) {
   items.forEach(item => {
     const key = item.partName
     if (!map[key]) {
-      map[key] = { partName: item.partName, totalQty: 0, skuDetails: [], colors: new Set() }
+      map[key] = { partName: item.partName, totalQty: 0, skuDetails: [], colors: new Set(), unitPrice: item.unitPrice, sourceItems: [] }
     }
     map[key].totalQty += item.totalQty
     map[key].skuDetails.push(`${item.variant || item.skuId}：${item.totalQty}件`)
     if (item.variant) map[key].colors.add(item.variant.replace(/.*-/, ''))
+    map[key].sourceItems.push(item)
   })
   return Object.values(map).map(m => ({
     partName: m.partName,
     totalQty: m.totalQty,
     colors: [...m.colors].join('、') || '-',
-    qtyDetail: m.skuDetails.join('\n')
+    qtyDetail: m.skuDetails.join('\n'),
+    unitPrice: m.unitPrice,
+    sourceItems: m.sourceItems
   }))
 }
 
@@ -526,28 +484,21 @@ async function saveAllContracts() {
   savingAll.value = true
   try {
     for (const c of contracts.value) {
-      if (c._savedId) continue // already saved
       const depositRatio = parseFloat(c.depositRate) / 100 || 0.3
       const totalAmount = c.productItems.reduce((sum, item) => {
         const price = parseFloat(item.unitPrice) || 0
         return sum + price * item.totalQty
       }, 0)
 
-      const result = await createContract({
+      await updateContract(c._savedId, {
         contract_no: c.contractNo,
-        supplier_org_id: c.orgId,
-        supplier_name: c.supplierName,
-        product_id: c._productId,
-        product_name: c._productName,
         total_amount: totalAmount,
         deposit_ratio: depositRatio,
         final_ratio: 1 - depositRatio,
-        items: c.productItems.map((item, i) => ({
-          item_id: `ci_${Date.now()}_${i}`,
-          part_name: item.partName,
-          quantity: item.totalQty,
-          unit_price: parseFloat(item.unitPrice) || 0,
-          amount: (parseFloat(item.unitPrice) || 0) * item.totalQty
+        items: (c._items || []).map((item) => ({
+          ...item,
+          unit_price: parseFloat(findProductItem(c, item.part_name)?.unitPrice) || 0,
+          amount: (parseFloat(findProductItem(c, item.part_name)?.unitPrice) || 0) * (item.quantity || 0)
         })),
         supplier_legal_person: c.legalPerson,
         supplier_credit_code: c.creditCode,
@@ -560,7 +511,6 @@ async function saveAllContracts() {
         raw_materials: c.rawMaterials,
         delivery_rows: c.deliveryRows
       })
-      c._savedId = result._id
     }
     ElMessage.success(`已保存 ${contracts.value.length} 份合同草稿`)
   } catch (e) {
@@ -583,6 +533,10 @@ function exportAllContracts() {
   contracts.value.forEach((_, i) => {
     setTimeout(() => exportContract(i), i * 500)
   })
+}
+
+function findProductItem(contract, partName) {
+  return (contract.productItems || []).find(item => item.partName === partName)
 }
 </script>
 
