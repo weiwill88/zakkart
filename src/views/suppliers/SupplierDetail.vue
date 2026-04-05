@@ -37,6 +37,15 @@
               <el-input v-model="editForm.cooperation_note" type="textarea" :rows="3" :disabled="!editing" />
             </el-form-item>
 
+            <el-divider content-position="left">签约信息</el-divider>
+
+            <el-form-item label="联系电话">
+              <el-input v-model="editForm.contact_phone" :disabled="!editing" placeholder="合同中显示的联系方式" />
+            </el-form-item>
+            <el-form-item label="注册地址">
+              <el-input v-model="editForm.address" :disabled="!editing" placeholder="合同中显示的公司地址" />
+            </el-form-item>
+
             <el-divider content-position="left">银行信息</el-divider>
 
             <el-form-item label="开户银行">
@@ -44,6 +53,9 @@
             </el-form-item>
             <el-form-item label="银行账号">
               <el-input v-model="editForm.bank_info.bank_account" :disabled="!editing" placeholder="银行卡号" />
+            </el-form-item>
+            <el-form-item label="开户行全称">
+              <el-input v-model="editForm.bank_info.bank_branch" :disabled="!editing" placeholder="如：中国银行股份有限公司义乌稠州支行" />
             </el-form-item>
 
             <el-form-item>
@@ -285,9 +297,12 @@ function resetEditForm() {
     has_assembly: org.value.has_assembly || false,
     cooperation_status: org.value.cooperation_status || 'active',
     cooperation_note: org.value.cooperation_note || '',
+    contact_phone: org.value.contact_phone || '',
+    address: org.value.address || '',
     bank_info: {
       bank_name: org.value.bank_info?.bank_name || '',
-      bank_account: org.value.bank_info?.bank_account || ''
+      bank_account: org.value.bank_info?.bank_account || '',
+      bank_branch: org.value.bank_info?.bank_branch || ''
     }
   }
 }
