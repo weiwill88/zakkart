@@ -18,12 +18,20 @@ export async function fetchProductPartTypes(ids = []) {
   return callApi('product.partTypes', { ids }, { token: getToken() })
 }
 
+export async function fetchProductPartTypeCatalog(params = {}) {
+  return callApi('product.partTypeCatalog', params, { token: getToken() })
+}
+
 export async function createProduct(data) {
   return callApi('product.create', data, { token: getToken() })
 }
 
 export async function updateProduct(id, data) {
   return callApi('product.update', { id, ...data }, { token: getToken() })
+}
+
+export async function deleteProduct(id) {
+  return callApi('product.delete', { id }, { token: getToken() })
 }
 
 export async function fetchProductStats() {
@@ -36,6 +44,10 @@ export async function addSku(productId, sku) {
 
 export async function updateSku(productId, skuId, data) {
   return callApi('product.updateSku', { productId, skuId, ...data }, { token: getToken() })
+}
+
+export async function deleteSku(productId, skuId) {
+  return callApi('product.deleteSku', { productId, skuId }, { token: getToken() })
 }
 
 export async function updateBom(productId, skuId, bom_items) {
