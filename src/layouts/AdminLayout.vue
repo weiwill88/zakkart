@@ -35,7 +35,7 @@
       </nav>
 
       <div class="sidebar-footnote">
-        正式开发中 · 阶段 3 生产与验货
+        正式开发中 · 阶段 4 发货与物流
       </div>
     </aside>
 
