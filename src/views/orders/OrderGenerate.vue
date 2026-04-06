@@ -25,7 +25,7 @@
           </el-col>
           <el-col :span="6">
             <el-form-item label=" ">
-              <el-button type="primary" @click="generateOrder" :disabled="!selectedProduct || totalQty < 1" style="width: 100%">
+              <el-button type="primary" @click="generateOrder" :disabled="!selectedProduct || normalizedTotalQty < 1" style="width: 100%">
                 生成订单 & 合同
               </el-button>
             </el-form-item>
@@ -43,8 +43,9 @@
             <el-button text size="small" @click="selectAll">全选</el-button>
             <el-button text size="small" @click="deselectAll">取消全选</el-button>
             <el-tag style="margin-left: 8px">
-              已分配：{{ allocatedTotal }} / {{ totalQty }}
-              <span v-if="remainQty > 0" style="color: var(--color-warning)"> · 剩余 {{ remainQty }}</span>
+              已分配：{{ allocatedTotal }} / {{ normalizedTotalQty || '-' }}
+              <span v-if="!normalizedTotalQty" style="color: var(--color-text-muted)"> · 请先填写采购总数量</span>
+              <span v-else-if="remainQty > 0" style="color: var(--color-warning)"> · 剩余 {{ remainQty }}</span>
               <span v-else-if="remainQty === 0" style="color: var(--color-success)"> ✓ 已分配完</span>
               <span v-else style="color: var(--color-danger)"> 超出 {{ -remainQty }}</span>
             </el-tag>
@@ -295,7 +296,7 @@ import { Packer } from 'docx'
 const products = ref([])
 const selectedProductId = ref('')
 const selectedProduct = ref(null)
-const totalQty = ref(1000)
+const totalQty = ref(null)
 const skuRows = ref([])
 const contracts = ref([])
 const activeContract = ref('0')
@@ -306,7 +307,8 @@ const pushingMap = ref({})
 
 const checkedSkus = computed(() => skuRows.value.filter(r => r.checked))
 const allocatedTotal = computed(() => checkedSkus.value.reduce((s, r) => s + (r.qty || 0), 0))
-const remainQty = computed(() => totalQty.value - allocatedTotal.value)
+const normalizedTotalQty = computed(() => Number(totalQty.value || 0))
+const remainQty = computed(() => normalizedTotalQty.value - allocatedTotal.value)
 
 onMounted(async () => {
   try {
@@ -355,6 +357,7 @@ async function onProductChange(productId) {
 
   const product = products.value.find(p => p._id === productId)
   selectedProduct.value = product
+  totalQty.value = null
 
   skuRows.value = (product.skus || []).map(sku => ({
     ...sku,
@@ -379,9 +382,10 @@ function isLastChecked(idx) {
 function recalcLastSku() {
   const checked = skuRows.value.filter(r => r.checked)
   if (checked.length === 0) return
+  if (!normalizedTotalQty.value) return
   const last = checked[checked.length - 1]
   const othersTotal = checked.filter(r => r !== last).reduce((s, r) => s + (r.qty || 0), 0)
-  last.qty = Math.max(0, totalQty.value - othersTotal)
+  last.qty = Math.max(0, normalizedTotalQty.value - othersTotal)
 }
 
 // === Generate contracts ===
@@ -395,7 +399,7 @@ async function generateOrder() {
   try {
     const result = await generateOrderApi({
       productId: selectedProductId.value,
-      totalQty: totalQty.value,
+      totalQty: normalizedTotalQty.value,
       skuAllocations: checked.map(item => ({
         skuId: item.sku_id,
         qty: item.qty

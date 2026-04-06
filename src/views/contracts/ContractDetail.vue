@@ -149,7 +149,8 @@
     <!-- Signed PDF link -->
     <el-card v-if="contract.signed_pdf_file_id" shadow="never" class="section-card">
       <template #header><span class="section-title">已签署文件</span></template>
-      <p>已签署 PDF 文件 ID: <code>{{ contract.signed_pdf_file_id }}</code></p>
+      <p>云存储 FileID：<code>{{ contract.signed_pdf_file_id }}</code></p>
+      <p class="file-hint">这里显示的是云存储 FileID，不是公网直链地址。</p>
     </el-card>
 
     <!-- Batch Dialog -->
@@ -477,6 +478,12 @@ onMounted(() => {
 }
 .section-title {
   font-weight: 600;
+}
+
+.file-hint {
+  margin: 8px 0 0;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 .section-header-row {
   display: flex;
