@@ -366,18 +366,24 @@ async function handleUploadSigned(file) {
 
 async function handleViewSignedPdf() {
   viewingSignedPdf.value = true
-  const previewWindow = window.open('', '_blank', 'noopener,noreferrer')
   try {
     const result = await fetchSignedContractFileUrl(route.params.id)
-    if (previewWindow) {
-      previewWindow.location.href = result.tempUrl
-    } else {
-      window.open(result.tempUrl, '_blank', 'noopener,noreferrer')
+    const response = await fetch(result.tempUrl)
+    if (!response.ok) {
+      throw new Error('文件下载失败')
     }
+    const blob = await response.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    const previewWindow = window.open(objectUrl, '_blank', 'noopener,noreferrer')
+    if (!previewWindow) {
+      const link = document.createElement('a')
+      link.href = objectUrl
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+      link.click()
+    }
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
   } catch (e) {
-    if (previewWindow) {
-      previewWindow.close()
-    }
     ElMessage.error(e.message || '打开 PDF 失败')
   } finally {
     viewingSignedPdf.value = false
