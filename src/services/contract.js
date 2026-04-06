@@ -39,3 +39,7 @@ export async function uploadSignedContract(id, signedPdfFileId) {
 export async function confirmContract(id) {
   return callApi('contract.confirm', { id }, { token: getToken() })
 }
+
+export async function fetchSignedContractFileUrl(id) {
+  return callApi('contract.getSignedPdfUrl', { id }, { token: getToken() })
+}

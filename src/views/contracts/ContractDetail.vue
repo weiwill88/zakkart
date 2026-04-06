@@ -30,6 +30,9 @@
         >
           <el-button type="success">上传已签署 PDF</el-button>
         </el-upload>
+        <el-button v-if="contract.signed_pdf_file_id" :loading="viewingSignedPdf" @click="handleViewSignedPdf">
+          查看已签 PDF
+        </el-button>
       </div>
     </div>
 
@@ -151,6 +154,7 @@
       <template #header><span class="section-title">已签署文件</span></template>
       <p>云存储 FileID：<code>{{ contract.signed_pdf_file_id }}</code></p>
       <p class="file-hint">这里显示的是云存储 FileID，不是公网直链地址。</p>
+      <el-button text type="primary" :loading="viewingSignedPdf" @click="handleViewSignedPdf">查看已签 PDF</el-button>
     </el-card>
 
     <!-- Batch Dialog -->
@@ -186,7 +190,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { fetchContractDetail, updateContract, exportContractWord, pushContractConfirm, uploadSignedContract } from '../../services/contract'
+import { fetchContractDetail, updateContract, exportContractWord, pushContractConfirm, uploadSignedContract, fetchSignedContractFileUrl } from '../../services/contract'
 import { fetchBatchList, createBatch, updateBatch, deleteBatch } from '../../services/batch'
 import { uploadCloudFile } from '../../services/cloudbase'
 import { buildContractWord } from '../../utils/contractWord'
@@ -202,6 +206,7 @@ const editing = ref(false)
 const saving = ref(false)
 const exporting = ref(false)
 const pushingConfirm = ref(false)
+const viewingSignedPdf = ref(false)
 const editForm = ref({ items: [], deposit_ratio: 0.3 })
 
 // Batch dialog
@@ -357,6 +362,26 @@ async function handleUploadSigned(file) {
   }
 
   return false // prevent default upload
+}
+
+async function handleViewSignedPdf() {
+  viewingSignedPdf.value = true
+  const previewWindow = window.open('', '_blank', 'noopener,noreferrer')
+  try {
+    const result = await fetchSignedContractFileUrl(route.params.id)
+    if (previewWindow) {
+      previewWindow.location.href = result.tempUrl
+    } else {
+      window.open(result.tempUrl, '_blank', 'noopener,noreferrer')
+    }
+  } catch (e) {
+    if (previewWindow) {
+      previewWindow.close()
+    }
+    ElMessage.error(e.message || '打开 PDF 失败')
+  } finally {
+    viewingSignedPdf.value = false
+  }
 }
 
 // Batch operations
