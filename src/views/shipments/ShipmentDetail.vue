@@ -52,15 +52,27 @@
         <el-descriptions-item label="车牌号">{{ shipment.driver?.plate_number || '-' }}</el-descriptions-item>
         <el-descriptions-item label="联系电话">{{ shipment.driver?.driver_phone || '-' }}</el-descriptions-item>
         <el-descriptions-item label="首次扫码">{{ formatDateTime(shipment.driver?.step1_at) }}</el-descriptions-item>
+        <el-descriptions-item label="接单 GPS">{{ shipment.driver?.step1_gps_text || '-' }}</el-descriptions-item>
         <el-descriptions-item label="确认提货">{{ formatDateTime(shipment.driver?.step2_at) }}</el-descriptions-item>
-        <el-descriptions-item label="签名/装车照">{{ shipment.driver?.signature_file_id || shipment.driver?.loading_photo_file_id ? '已上传' : '-' }}</el-descriptions-item>
+        <el-descriptions-item label="提货 GPS">{{ shipment.driver?.step2_gps_text || '-' }}</el-descriptions-item>
       </el-descriptions>
+      <div v-if="shipment.driver?.signature_temp_url || shipment.driver?.loading_photo_temp_url" class="driver-media-grid">
+        <div v-if="shipment.driver?.signature_temp_url" class="driver-media-card">
+          <p class="driver-media-title">手写签名</p>
+          <el-image :src="shipment.driver.signature_temp_url" :preview-src-list="driverPreviewUrls" fit="cover" class="driver-media-image" />
+        </div>
+        <div v-if="shipment.driver?.loading_photo_temp_url" class="driver-media-card">
+          <p class="driver-media-title">装车照片</p>
+          <el-image :src="shipment.driver.loading_photo_temp_url" :preview-src-list="driverPreviewUrls" fit="cover" class="driver-media-image" />
+        </div>
+      </div>
+      <el-empty v-else description="司机尚未上传提货凭证" />
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { fetchShipmentDetail, confirmShipmentQty, fetchShipmentQrCode } from '../../services/shipment'
@@ -71,6 +83,9 @@ const loading = ref(false)
 const confirming = ref(false)
 const shipment = ref({ items: [], driver: null })
 const qrCode = ref({})
+const driverPreviewUrls = computed(() => {
+  return [shipment.value.driver?.signature_temp_url, shipment.value.driver?.loading_photo_temp_url].filter(Boolean)
+})
 
 async function loadData() {
   loading.value = true
@@ -172,5 +187,32 @@ onMounted(() => {
   margin-top: 16px;
   display: flex;
   gap: 12px;
+}
+
+.driver-media-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.driver-media-card {
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 12px;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.driver-media-title {
+  margin: 0 0 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.driver-media-image {
+  width: 100%;
+  height: 220px;
+  border-radius: 10px;
+  overflow: hidden;
 }
 </style>
