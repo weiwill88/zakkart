@@ -37,19 +37,26 @@
         <template #default="{ row }">{{ formatDateTime(row.latestInspection?.inspected_at) }}</template>
       </el-table-column>
     </el-table>
+    <el-empty v-if="!loading && rows.length === 0" :description="emptyText" />
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { fetchInspectionList } from '../../services/inspection'
+import { getInspectionDisplayStatusLabel, getInspectionDisplayStatusTagType, getInspectionResultLabel } from '../../utils/status'
 
 const router = useRouter()
 const activeTab = ref('pending')
 const loading = ref(false)
 const rows = ref([])
+const emptyTextMap = {
+  pending: '暂无待验货任务',
+  all: '暂无验货记录',
+  done: '暂无已完成的验货记录'
+}
 
 async function loadData() {
   loading.value = true
@@ -83,32 +90,18 @@ function formatDateTime(value) {
 }
 
 function statusLabel(status) {
-  return {
-    PENDING_INSPECTION: '待验货',
-    PASS: '全部通过',
-    PARTIAL_PASS: '部分通过',
-    FAILED: '验货未通过',
-    PENDING_SHIPMENT: '待发货'
-  }[status] || status || '-'
+  return getInspectionDisplayStatusLabel(status)
 }
 
 function inspectionResultLabel(result) {
-  return {
-    PASS: '全部通过',
-    PARTIAL_PASS: '部分通过',
-    FAIL: '不通过'
-  }[result] || result
+  return getInspectionResultLabel(result)
 }
 
 function statusTagType(status) {
-  return {
-    PENDING_INSPECTION: 'warning',
-    PASS: 'success',
-    PARTIAL_PASS: 'primary',
-    FAILED: 'danger',
-    PENDING_SHIPMENT: 'success'
-  }[status] || 'info'
+  return getInspectionDisplayStatusTagType(status)
 }
+
+const emptyText = computed(() => emptyTextMap[activeTab.value] || '暂无数据')
 
 onMounted(() => {
   loadData()

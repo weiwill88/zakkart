@@ -30,6 +30,13 @@
         <el-descriptions-item label="次品说明" :span="2">{{ target.latestInspection.defect_desc || '-' }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="2">{{ target.latestInspection.note || '-' }}</el-descriptions-item>
       </el-descriptions>
+      <div v-if="defectMediaList.length > 0" class="media-preview-grid">
+        <div v-for="media in defectMediaList" :key="media.defectId" class="media-preview-item">
+          <el-image v-if="media.mediaType === 'image'" :src="media.url" fit="cover" :preview-src-list="imagePreviewUrls" />
+          <video v-else class="media-video" :src="media.url" controls preload="metadata"></video>
+          <div class="media-caption">{{ media.description || media.fileName || '现场附件' }}</div>
+        </div>
+      </div>
     </el-card>
 
     <el-card shadow="never" class="section-card">
@@ -54,7 +61,7 @@
         <el-form-item label="现场备注">
           <el-input v-model="form.note" type="textarea" :rows="3" />
         </el-form-item>
-        <el-form-item label="缺陷图片">
+        <el-form-item label="缺陷附件">
           <el-upload
             multiple
             list-type="text"
@@ -62,9 +69,9 @@
             :show-file-list="true"
             :on-change="handleDefectFileChange"
             :on-remove="handleDefectFileRemove"
-            accept="image/*"
+            accept="image/*,video/*"
           >
-            <el-button>选择图片</el-button>
+            <el-button>选择图片/视频</el-button>
           </el-upload>
         </el-form-item>
         <el-form-item>
@@ -82,7 +89,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { fetchInspectionList, createInspection } from '../../services/inspection'
-import { uploadCloudFile } from '../../services/cloudbase'
+import { getTempFileURLs, uploadCloudFile } from '../../services/cloudbase'
+import { getInspectionDisplayStatusLabel, getInspectionDisplayStatusTagType, getInspectionResultLabel } from '../../utils/status'
 
 const route = useRoute()
 const router = useRouter()
@@ -91,6 +99,7 @@ const loading = ref(false)
 const submitting = ref(false)
 const target = ref({})
 const selectedDefectFiles = ref([])
+const defectMediaList = ref([])
 const form = ref({
   result: 'PASS',
   qualifiedQty: 0,
@@ -100,6 +109,7 @@ const form = ref({
 })
 
 const baseQty = computed(() => Number(target.value.actualQty || target.value.plannedQty || 0))
+const imagePreviewUrls = computed(() => defectMediaList.value.filter(item => item.mediaType === 'image').map(item => item.url))
 
 async function loadData() {
   loading.value = true
@@ -114,6 +124,7 @@ async function loadData() {
     target.value = row
     form.value.qualifiedQty = baseQty.value
     form.value.defectQty = 0
+    defectMediaList.value = await resolveInspectionMedia(row.latestInspection?.defects || [])
   } catch (error) {
     ElMessage.error(error.message || '加载验货详情失败')
   } finally {
@@ -166,6 +177,8 @@ async function handleSubmit() {
       })
       defects.push({
         photo_file_id: uploadResult.fileID || uploadResult.fileId,
+        media_type: file.raw.type?.startsWith('video/') ? 'video' : 'image',
+        file_name: file.name,
         description: form.value.defectDesc || file.name
       })
     }
@@ -205,31 +218,41 @@ function formatDateTime(value) {
 }
 
 function resultLabel(result) {
-  return {
-    PASS: '全部通过',
-    PARTIAL_PASS: '部分通过',
-    FAIL: '不通过'
-  }[result] || result || '-'
+  return getInspectionResultLabel(result)
 }
 
 function statusLabel(status) {
-  return {
-    PENDING_INSPECTION: '待验货',
-    PASS: '全部通过',
-    PARTIAL_PASS: '部分通过',
-    FAILED: '验货未通过',
-    PENDING_SHIPMENT: '待发货'
-  }[status] || status || '-'
+  return getInspectionDisplayStatusLabel(status)
 }
 
 function statusTagType(status) {
-  return {
-    PENDING_INSPECTION: 'warning',
-    PASS: 'success',
-    PARTIAL_PASS: 'primary',
-    FAILED: 'danger',
-    PENDING_SHIPMENT: 'success'
-  }[status] || 'info'
+  return getInspectionDisplayStatusTagType(status)
+}
+
+async function resolveInspectionMedia(defects) {
+  const mediaList = Array.isArray(defects) ? defects : []
+  const fileIds = mediaList.map(item => item.photo_file_id).filter(Boolean)
+  if (fileIds.length === 0) {
+    return []
+  }
+
+  const result = await getTempFileURLs(fileIds)
+  const urlMap = (result.fileList || []).reduce((acc, item) => {
+    if (item.fileID && item.tempFileURL) {
+      acc[item.fileID] = item.tempFileURL
+    }
+    return acc
+  }, {})
+
+  return mediaList
+    .map(item => ({
+      defectId: item.defect_id,
+      mediaType: item.media_type === 'video' ? 'video' : 'image',
+      description: item.description || '',
+      fileName: item.file_name || '',
+      url: urlMap[item.photo_file_id] || ''
+    }))
+    .filter(item => item.url)
 }
 
 onMounted(() => {
@@ -262,5 +285,38 @@ onMounted(() => {
 
 .section-title {
   font-weight: 600;
+}
+
+.media-preview-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.media-preview-item {
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.media-preview-item :deep(.el-image) {
+  width: 100%;
+  height: 180px;
+  display: block;
+}
+
+.media-video {
+  width: 100%;
+  height: 180px;
+  display: block;
+  background: #000;
+}
+
+.media-caption {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 </style>

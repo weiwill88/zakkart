@@ -8,7 +8,7 @@
     <el-tabs v-model="activeStatus" @tab-change="handleStatusChange">
       <el-tab-pane label="全部" name="all" />
       <el-tab-pane label="草稿" name="DRAFT" />
-      <el-tab-pane label="待签署" name="PENDING_SIGN" />
+      <el-tab-pane label="待签约" name="PENDING_SIGN" />
       <el-tab-pane label="已签署" name="SIGNED" />
       <el-tab-pane label="执行中" name="EXECUTING" />
       <el-tab-pane label="已完成" name="COMPLETED" />
@@ -38,6 +38,13 @@
       <el-table-column label="状态" width="100">
         <template #default="{ row }">
           <el-tag :type="statusTagType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="供应商确认" width="140">
+        <template #default="{ row }">
+          <el-tag :type="getSupplierConfirmStatusTagType(row.supplier_confirm_status)" size="small">
+            {{ getSupplierConfirmStatusLabel(row.supplier_confirm_status) }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="合同金额" width="130" align="right">
@@ -72,6 +79,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { fetchContractList } from '../../services/contract'
+import { getContractStatusLabel, getContractStatusTagType, getSupplierConfirmStatusLabel, getSupplierConfirmStatusTagType } from '../../utils/status'
 
 const router = useRouter()
 
@@ -83,28 +91,12 @@ const page = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
 
-const STATUS_MAP = {
-  DRAFT: '草稿',
-  PENDING_SIGN: '待签署',
-  SIGNED: '已签署',
-  EXECUTING: '执行中',
-  COMPLETED: '已完成'
-}
-
-const STATUS_TAG_TYPE = {
-  DRAFT: 'info',
-  PENDING_SIGN: 'warning',
-  SIGNED: 'success',
-  EXECUTING: 'primary',
-  COMPLETED: ''
-}
-
 function statusLabel(status) {
-  return STATUS_MAP[status] || status
+  return getContractStatusLabel(status)
 }
 
 function statusTagType(status) {
-  return STATUS_TAG_TYPE[status] || 'info'
+  return getContractStatusTagType(status)
 }
 
 function formatDate(dateStr) {

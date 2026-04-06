@@ -31,3 +31,7 @@ export async function exportContractWord(id, wordFileId) {
 export async function uploadSignedContract(id, signedPdfFileId) {
   return callApi('contract.uploadSigned', { id, signedPdfFileId }, { token: getToken() })
 }
+
+export async function confirmContract(id) {
+  return callApi('contract.confirm', { id }, { token: getToken() })
+}

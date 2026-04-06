@@ -50,8 +50,16 @@
         <el-descriptions-item label="合同总金额">
           <strong>{{ (contract.total_amount || 0).toLocaleString() }} 元</strong>
         </el-descriptions-item>
+        <el-descriptions-item label="供应商确认">
+          <el-tag :type="getSupplierConfirmStatusTagType(contract.supplier_confirm_status)">
+            {{ getSupplierConfirmStatusLabel(contract.supplier_confirm_status) }}
+          </el-tag>
+        </el-descriptions-item>
         <el-descriptions-item label="签署时间" v-if="contract.signed_at">
           {{ formatDate(contract.signed_at) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="确认时间" v-if="contract.supplier_confirmed_at">
+          {{ formatDate(contract.supplier_confirmed_at) }}
         </el-descriptions-item>
       </el-descriptions>
     </el-card>
@@ -178,6 +186,7 @@ import { fetchContractDetail, updateContract, exportContractWord, uploadSignedCo
 import { fetchBatchList, createBatch, updateBatch, deleteBatch } from '../../services/batch'
 import { uploadCloudFile } from '../../services/cloudbase'
 import { buildContractWord } from '../../utils/contractWord'
+import { getContractStatusLabel, getContractStatusTagType, getGoodsStatusLabel, getGoodsStatusTagType, getSupplierConfirmStatusLabel, getSupplierConfirmStatusTagType } from '../../utils/status'
 
 const route = useRoute()
 const router = useRouter()
@@ -196,41 +205,10 @@ const batchEditId = ref(null)
 const batchSaving = ref(false)
 const batchForm = ref({ planned_date: '', note: '', parts: [] })
 
-const STATUS_MAP = {
-  DRAFT: '草稿',
-  PENDING_SIGN: '待签署',
-  SIGNED: '已签署',
-  EXECUTING: '执行中',
-  COMPLETED: '已完成'
-}
-const STATUS_TAG_TYPE = {
-  DRAFT: 'info',
-  PENDING_SIGN: 'warning',
-  SIGNED: 'success',
-  EXECUTING: 'primary',
-  COMPLETED: ''
-}
-const GOODS_STATUS_MAP = {
-  PENDING_PRODUCTION: '待生产',
-  PENDING_INSPECTION: '已生产待验货',
-  PENDING_SHIPMENT: '已验货待发货',
-  VEHICLE_DISPATCHED: '已派车',
-  IN_TRANSIT: '在途运输',
-  ARRIVED: '已到达'
-}
-const GOODS_TAG_TYPE = {
-  PENDING_PRODUCTION: 'info',
-  PENDING_INSPECTION: 'warning',
-  PENDING_SHIPMENT: '',
-  VEHICLE_DISPATCHED: 'primary',
-  IN_TRANSIT: 'primary',
-  ARRIVED: 'success'
-}
-
-function statusLabel(s) { return STATUS_MAP[s] || s }
-function statusTagType(s) { return STATUS_TAG_TYPE[s] || 'info' }
-function goodsStatusLabel(s) { return GOODS_STATUS_MAP[s] || s }
-function goodsStatusTagType(s) { return GOODS_TAG_TYPE[s] || 'info' }
+function statusLabel(s) { return getContractStatusLabel(s) }
+function statusTagType(s) { return getContractStatusTagType(s) }
+function goodsStatusLabel(s) { return getGoodsStatusLabel(s) }
+function goodsStatusTagType(s) { return getGoodsStatusTagType(s) }
 
 function formatDate(dateStr) {
   if (!dateStr) return '-'
