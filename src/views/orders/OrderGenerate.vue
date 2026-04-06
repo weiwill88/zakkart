@@ -94,12 +94,26 @@
         <span style="font-size: 18px; font-weight: 600">合同预览（共 {{ contracts.length }} 份）</span>
         <div>
           <el-button type="success" :loading="savingAll" @click="saveAllContracts">保存全部草稿</el-button>
+          <el-button type="warning" :loading="pushingAll" @click="pushAllContracts">一键推送确认</el-button>
           <el-button type="primary" @click="exportAllContracts">一键导出全部 Word</el-button>
         </div>
       </div>
 
       <el-tabs v-model="activeContract" type="card">
         <el-tab-pane v-for="(c, ci) in contracts" :key="ci" :label="c.supplierName.length > 4 ? c.supplierName.slice(0, 4) + '…' : c.supplierName" :name="String(ci)">
+          <div class="contract-state-bar">
+            <div class="contract-state-left">
+              <el-tag :type="statusTagType(c._status)">{{ statusLabel(c._status) }}</el-tag>
+              <el-tag :type="supplierConfirmTagType(c._supplierConfirmStatus)">{{ supplierConfirmLabel(c._supplierConfirmStatus) }}</el-tag>
+            </div>
+            <div class="contract-state-actions">
+              <el-button size="small" :loading="isSaving(c)" @click="saveContract(ci)">保存此份草稿</el-button>
+              <el-button size="small" type="warning" :loading="isPushing(c)" :disabled="!canPushConfirm(c)" @click="pushContract(ci)">
+                {{ pushButtonLabel(c) }}
+              </el-button>
+              <el-button size="small" type="primary" @click="exportContract(ci)">导出此份合同 Word</el-button>
+            </div>
+          </div>
           <div class="contract-doc">
             <div class="contract-header">
               <div class="contract-number">合同编号：<input v-model="c.contractNo" class="contract-input" style="width: 280px" /></div>
@@ -254,6 +268,10 @@
             <div style="text-align: center; margin-top: 16px; font-size: 12px; color: var(--color-text-muted)">上海掇骁贸易有限公司</div>
 
             <div style="text-align: right; margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--color-border)">
+              <el-button @click="saveContract(ci)" :loading="isSaving(c)">保存此份草稿</el-button>
+              <el-button type="warning" @click="pushContract(ci)" :loading="isPushing(c)" :disabled="!canPushConfirm(c)">
+                {{ pushButtonLabel(c) }}
+              </el-button>
               <el-button type="primary" @click="exportContract(ci)">导出此份合同 Word</el-button>
             </div>
           </div>
@@ -267,9 +285,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchProductList } from '../../services/product'
-import { updateContract } from '../../services/contract'
+import { pushContractConfirm, updateContract } from '../../services/contract'
 import { generateOrder as generateOrderApi } from '../../services/order'
 import { buildContractWord } from '../../utils/contractWord'
+import { getContractStatusLabel, getContractStatusTagType, getSupplierConfirmStatusLabel, getSupplierConfirmStatusTagType } from '../../utils/status'
 import { saveAs } from 'file-saver'
 import { Packer } from 'docx'
 
@@ -281,6 +300,9 @@ const skuRows = ref([])
 const contracts = ref([])
 const activeContract = ref('0')
 const savingAll = ref(false)
+const pushingAll = ref(false)
+const savingMap = ref({})
+const pushingMap = ref({})
 
 const checkedSkus = computed(() => skuRows.value.filter(r => r.checked))
 const allocatedTotal = computed(() => checkedSkus.value.reduce((s, r) => s + (r.qty || 0), 0))
@@ -294,6 +316,38 @@ onMounted(async () => {
     ElMessage.error('加载产品列表失败')
   }
 })
+
+function statusLabel(status) {
+  return getContractStatusLabel(status)
+}
+
+function statusTagType(status) {
+  return getContractStatusTagType(status)
+}
+
+function supplierConfirmLabel(status) {
+  return getSupplierConfirmStatusLabel(status)
+}
+
+function supplierConfirmTagType(status) {
+  return getSupplierConfirmStatusTagType(status)
+}
+
+function isSaving(contract) {
+  return Boolean(savingMap.value[contract._savedId])
+}
+
+function isPushing(contract) {
+  return Boolean(pushingMap.value[contract._savedId])
+}
+
+function canPushConfirm(contract) {
+  return ['DRAFT', 'PENDING_SIGN'].includes(contract._status) && contract._supplierConfirmStatus !== 'CONFIRMED'
+}
+
+function pushButtonLabel(contract) {
+  return contract._supplierConfirmStatus === 'PENDING_CONFIRM' ? '重新推送确认' : '推送给供应商确认'
+}
 
 async function onProductChange(productId) {
   contracts.value = []
@@ -391,6 +445,8 @@ async function generateOrder() {
         deliveryRows: [buildEmptyDeliveryRow(deliveryCols)],
         _productId: contract.productId,
         _productName: contract.productName,
+        _status: contract.status || 'DRAFT',
+        _supplierConfirmStatus: contract.supplierConfirmStatus || 'UNSENT',
         _savedId: contract.contractId,
         _items: contract.items || []
       }
@@ -483,40 +539,73 @@ function calcGrandTotal(c) {
 async function saveAllContracts() {
   savingAll.value = true
   try {
-    for (const c of contracts.value) {
-      const depositRatio = parseFloat(c.depositRate) / 100 || 0.3
-      const totalAmount = c.productItems.reduce((sum, item) => {
-        const price = parseFloat(item.unitPrice) || 0
-        return sum + price * item.totalQty
-      }, 0)
-
-      await updateContract(c._savedId, {
-        contract_no: c.contractNo,
-        total_amount: totalAmount,
-        deposit_ratio: depositRatio,
-        final_ratio: 1 - depositRatio,
-        items: (c._items || []).map((item) => ({
-          ...item,
-          unit_price: parseFloat(findProductItem(c, item.part_name)?.unitPrice) || 0,
-          amount: (parseFloat(findProductItem(c, item.part_name)?.unitPrice) || 0) * (item.quantity || 0)
-        })),
-        supplier_legal_person: c.legalPerson,
-        supplier_credit_code: c.creditCode,
-        supplier_address: c.address,
-        supplier_phone: c.phone,
-        supplier_bank_name: c.bankName,
-        supplier_bank_account: c.bankAccount,
-        supplier_bank_branch: c.bankBranch,
-        product_desc: c.productDesc,
-        raw_materials: c.rawMaterials,
-        delivery_rows: c.deliveryRows
-      })
+    for (let i = 0; i < contracts.value.length; i += 1) {
+      await saveContract(i, false)
     }
     ElMessage.success(`已保存 ${contracts.value.length} 份合同草稿`)
   } catch (e) {
     ElMessage.error(e.message || '保存失败')
   } finally {
     savingAll.value = false
+  }
+}
+
+async function saveContract(index, showMessage = true) {
+  const c = contracts.value[index]
+  if (!c) return
+
+  savingMap.value = { ...savingMap.value, [c._savedId]: true }
+  try {
+    const updatedContract = await updateContract(c._savedId, buildContractUpdatePayload(c))
+    applyContractState(c, updatedContract)
+    if (showMessage) {
+      ElMessage.success(`已保存 ${c.supplierName} 合同草稿`)
+    }
+  } finally {
+    const nextMap = { ...savingMap.value }
+    delete nextMap[c._savedId]
+    savingMap.value = nextMap
+  }
+}
+
+async function pushContract(index, showMessage = true) {
+  const c = contracts.value[index]
+  if (!c || !canPushConfirm(c)) return
+
+  pushingMap.value = { ...pushingMap.value, [c._savedId]: true }
+  try {
+    await saveContract(index, false)
+    const result = await pushContractConfirm(c._savedId)
+    c._status = result.status || 'PENDING_SIGN'
+    c._supplierConfirmStatus = result.supplierConfirmStatus || 'PENDING_CONFIRM'
+    if (showMessage) {
+      ElMessage.success(`${c.supplierName} 合同已推送给供应商确认`)
+    }
+  } catch (e) {
+    if (showMessage) {
+      ElMessage.error(e.message || '推送确认失败')
+    }
+    throw e
+  } finally {
+    const nextMap = { ...pushingMap.value }
+    delete nextMap[c._savedId]
+    pushingMap.value = nextMap
+  }
+}
+
+async function pushAllContracts() {
+  pushingAll.value = true
+  try {
+    for (let i = 0; i < contracts.value.length; i += 1) {
+      if (canPushConfirm(contracts.value[i])) {
+        await pushContract(i, false)
+      }
+    }
+    ElMessage.success('已完成全部合同推送确认')
+  } catch (e) {
+    ElMessage.error(e.message || '批量推送确认失败')
+  } finally {
+    pushingAll.value = false
   }
 }
 
@@ -538,9 +627,60 @@ function exportAllContracts() {
 function findProductItem(contract, partName) {
   return (contract.productItems || []).find(item => item.partName === partName)
 }
+
+function buildContractUpdatePayload(contract) {
+  const depositRatio = parseFloat(contract.depositRate) / 100 || 0.3
+  const totalAmount = contract.productItems.reduce((sum, item) => {
+    const price = parseFloat(item.unitPrice) || 0
+    return sum + price * item.totalQty
+  }, 0)
+
+  return {
+    contract_no: contract.contractNo,
+    total_amount: totalAmount,
+    deposit_ratio: depositRatio,
+    final_ratio: 1 - depositRatio,
+    items: (contract._items || []).map((item) => ({
+      ...item,
+      unit_price: parseFloat(findProductItem(contract, item.part_name)?.unitPrice) || 0,
+      amount: (parseFloat(findProductItem(contract, item.part_name)?.unitPrice) || 0) * (item.quantity || 0)
+    })),
+    supplier_legal_person: contract.legalPerson,
+    supplier_credit_code: contract.creditCode,
+    supplier_address: contract.address,
+    supplier_phone: contract.phone,
+    supplier_bank_name: contract.bankName,
+    supplier_bank_account: contract.bankAccount,
+    supplier_bank_branch: contract.bankBranch,
+    product_desc: contract.productDesc,
+    raw_materials: contract.rawMaterials,
+    delivery_rows: contract.deliveryRows
+  }
+}
+
+function applyContractState(targetContract, updatedContract) {
+  targetContract.contractNo = updatedContract.contract_no || targetContract.contractNo
+  targetContract._status = updatedContract.status || targetContract._status || 'DRAFT'
+  targetContract._supplierConfirmStatus = updatedContract.supplier_confirm_status || targetContract._supplierConfirmStatus || 'UNSENT'
+}
 </script>
 
 <style scoped>
+.contract-state-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.contract-state-left,
+.contract-state-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .contract-doc {
   max-width: 800px;
   margin: 0 auto;

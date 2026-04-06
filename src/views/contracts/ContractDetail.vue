@@ -16,6 +16,9 @@
         <el-button v-if="canEdit && editing" type="primary" :loading="saving" @click="handleSave">
           保存
         </el-button>
+        <el-button v-if="canPushConfirm" type="warning" :loading="pushingConfirm" @click="handlePushConfirm">
+          {{ contract.supplier_confirm_status === 'PENDING_CONFIRM' ? '重新推送确认' : '推送给供应商确认' }}
+        </el-button>
         <el-button v-if="canExport" type="warning" :loading="exporting" @click="handleExportWord">
           导出 Word
         </el-button>
@@ -182,7 +185,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { fetchContractDetail, updateContract, exportContractWord, uploadSignedContract } from '../../services/contract'
+import { fetchContractDetail, updateContract, exportContractWord, pushContractConfirm, uploadSignedContract } from '../../services/contract'
 import { fetchBatchList, createBatch, updateBatch, deleteBatch } from '../../services/batch'
 import { uploadCloudFile } from '../../services/cloudbase'
 import { buildContractWord } from '../../utils/contractWord'
@@ -197,6 +200,7 @@ const loading = ref(false)
 const editing = ref(false)
 const saving = ref(false)
 const exporting = ref(false)
+const pushingConfirm = ref(false)
 const editForm = ref({ items: [], deposit_ratio: 0.3 })
 
 // Batch dialog
@@ -218,6 +222,7 @@ function formatDate(dateStr) {
 const canEdit = computed(() => ['DRAFT', 'PENDING_SIGN'].includes(contract.value.status))
 const canExport = computed(() => ['DRAFT', 'PENDING_SIGN'].includes(contract.value.status))
 const canUploadSigned = computed(() => ['DRAFT', 'PENDING_SIGN'].includes(contract.value.status))
+const canPushConfirm = computed(() => ['DRAFT', 'PENDING_SIGN'].includes(contract.value.status) && contract.value.supplier_confirm_status !== 'CONFIRMED')
 const canAddBatch = computed(() => ['DRAFT', 'PENDING_SIGN', 'SIGNED', 'EXECUTING'].includes(contract.value.status))
 
 function isBatchDeletable(batch) {
@@ -318,6 +323,19 @@ async function handleExportWord() {
     ElMessage.error(e.message || '导出失败')
   } finally {
     exporting.value = false
+  }
+}
+
+async function handlePushConfirm() {
+  pushingConfirm.value = true
+  try {
+    await pushContractConfirm(route.params.id)
+    ElMessage.success('已推送给供应商确认')
+    await loadContract()
+  } catch (e) {
+    ElMessage.error(e.message || '推送确认失败')
+  } finally {
+    pushingConfirm.value = false
   }
 }
 

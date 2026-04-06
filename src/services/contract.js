@@ -28,6 +28,10 @@ export async function exportContractWord(id, wordFileId) {
   return callApi('contract.exportWord', params, { token: getToken() })
 }
 
+export async function pushContractConfirm(id) {
+  return callApi('contract.pushConfirm', { id }, { token: getToken() })
+}
+
 export async function uploadSignedContract(id, signedPdfFileId) {
   return callApi('contract.uploadSigned', { id, signedPdfFileId }, { token: getToken() })
 }
