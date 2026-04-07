@@ -30,7 +30,7 @@ const routes = [
       { path: 'freight', name: 'FreightList', component: () => import('../views/freight/FreightList.vue'), meta: { title: '货代单据', menu: true, icon: '📦' } },
       { path: 'addresses', name: 'AddressList', component: () => import('../views/addresses/AddressList.vue'), meta: { title: '地址管理', menu: true, icon: '📍' } },
       { path: 'inventory', name: 'Inventory', component: () => import('../views/system/ComingSoonView.vue'), meta: { title: '库存管理', menu: true, icon: '📊', phase: '阶段 5', description: '库存管理将在收货、组装、出库链路接通后再上线。当前旧版模拟数据已下线，避免与真实主数据混淆。' } },
-      { path: 'notifications', name: 'NotificationCenter', component: () => import('../views/system/ComingSoonView.vue'), meta: { title: '通知中心', menu: true, icon: '🔔', phase: '阶段 2', description: '通知中心会在合同和状态流转阶段接入。' } },
+      { path: 'notifications', name: 'NotificationCenter', component: () => import('../views/notifications/NotificationList.vue'), meta: { title: '通知中心', menu: true, icon: '🔔' } },
       { path: 'settings', name: 'Settings', component: () => import('../views/system/ComingSoonView.vue'), meta: { title: '系统设置', menu: true, icon: '⚙️', phase: '阶段 7', description: '系统设置会在后期补齐合同模板和系统参数管理。' } },
     ]
   }

@@ -61,7 +61,7 @@
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchFreightDocuments, createFreightDocument, confirmFreightArrival } from '../../services/freight'
-import { fetchShipmentList, fetchShipmentDetail, confirmShipmentArrival } from '../../services/shipment'
+import { fetchShipmentList } from '../../services/shipment'
 import { fetchAddressList } from '../../services/address'
 import { getTempFileURLs, uploadCloudFile } from '../../services/cloudbase'
 
@@ -157,28 +157,12 @@ async function handleOpen(row) {
 
 async function handleConfirmArrival(row) {
   try {
-    for (const shipment of row.shipments || []) {
-      if (shipment.status !== 'IN_TRANSIT') {
-        continue
-      }
-      const detail = await fetchShipmentDetail(shipment._id)
-      await createArrivalForShipment(detail)
-    }
     await confirmFreightArrival(row._id)
     ElMessage.success('已确认到达货代')
     await loadData()
   } catch (error) {
     ElMessage.error(error.message || '确认到达失败')
   }
-}
-
-async function createArrivalForShipment(detail) {
-  await confirmShipmentArrival(detail._id, (detail.items || []).map(item => ({
-    itemId: item.item_id,
-    actualReceivedQty: Number(item.actual_qty || 0),
-    hasException: false,
-    exceptionNote: ''
-  })), [])
 }
 
 function formatDateTime(value) {
