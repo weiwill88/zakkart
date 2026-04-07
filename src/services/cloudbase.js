@@ -55,18 +55,44 @@ export async function getTempFileURLs(fileList) {
 }
 
 async function ensureAnonymousAccessInternal() {
-  const auth = getCloudbaseAuth()
-  const loginState = await auth.getLoginState()
+  let auth
+  try {
+    auth = getCloudbaseAuth()
+  } catch (error) {
+    console.warn('[cloudbase] auth init failed, continue in guest mode during development', error)
+    return null
+  }
+
+  const loginState = await safeGetLoginState(auth)
 
   if (loginState) {
     return loginState
   }
 
   try {
-    await auth.anonymousAuthProvider().signIn()
-    return auth.getLoginState()
+    const provider = auth?.anonymousAuthProvider?.()
+    if (!provider || typeof provider.signIn !== 'function') {
+      return null
+    }
+
+    await provider.signIn()
+    return safeGetLoginState(auth)
   } catch (error) {
     console.warn('[cloudbase] anonymous sign-in failed, continue in guest mode during development', error)
+    return null
+  }
+}
+
+async function safeGetLoginState(auth) {
+  if (!auth || typeof auth.getLoginState !== 'function') {
+    return null
+  }
+
+  try {
+    const loginState = await auth.getLoginState()
+    return loginState || null
+  } catch (error) {
+    console.warn('[cloudbase] getLoginState failed, continue in guest mode during development', error)
     return null
   }
 }
