@@ -26,7 +26,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     try {
-      const response = await callApi('auth.me', {}, { token: token.value, anonymousOptional: false })
+      const response = await callApi('auth.me', {}, { token: token.value })
       user.value = response.user
       persist()
     } catch (error) {
@@ -37,11 +37,11 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function sendSmsCode(mobile) {
-    return callApi('auth.smsSend', { mobile }, { skipAuth: true, anonymousOptional: false })
+    return callApi('auth.smsSend', { mobile }, { skipAuth: true })
   }
 
   async function loginBySms(payload) {
-    const response = await callApi('auth.smsLogin', payload, { skipAuth: true, anonymousOptional: false })
+    const response = await callApi('auth.smsLogin', payload, { skipAuth: true })
     token.value = response.token
     user.value = response.user
     persist()
