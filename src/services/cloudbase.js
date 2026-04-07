@@ -38,20 +38,32 @@ export async function ensureAnonymousAccess() {
 
 export async function callCloudFunction(name, data) {
   const app = getCloudbaseApp()
-  return app.callFunction({ name, data })
+  try {
+    return await app.callFunction({ name, data })
+  } catch (error) {
+    throw normalizeCloudbaseError(error)
+  }
 }
 
 export async function uploadCloudFile({ cloudPath, file }) {
   const app = getCloudbaseApp()
-  return app.uploadFile({
-    cloudPath,
-    filePath: file
-  })
+  try {
+    return await app.uploadFile({
+      cloudPath,
+      filePath: file
+    })
+  } catch (error) {
+    throw normalizeCloudbaseError(error)
+  }
 }
 
 export async function getTempFileURLs(fileList) {
   const app = getCloudbaseApp()
-  return app.getTempFileURL({ fileList })
+  try {
+    return await app.getTempFileURL({ fileList })
+  } catch (error) {
+    throw normalizeCloudbaseError(error)
+  }
 }
 
 async function ensureAnonymousAccessInternal() {
@@ -70,6 +82,14 @@ async function ensureAnonymousAccessInternal() {
   }
 
   try {
+    if (typeof auth.signInAnonymously === 'function') {
+      const result = await auth.signInAnonymously({})
+      if (result?.error) {
+        throw result.error
+      }
+      return result?.data?.session || result || null
+    }
+
     const provider = auth?.anonymousAuthProvider?.()
     if (!provider || typeof provider.signIn !== 'function') {
       return null
@@ -78,8 +98,9 @@ async function ensureAnonymousAccessInternal() {
     await provider.signIn()
     return safeGetLoginState(auth)
   } catch (error) {
-    console.warn('[cloudbase] anonymous sign-in failed, continue in guest mode during development', error)
-    return null
+    const normalizedError = normalizeCloudbaseError(error)
+    console.warn('[cloudbase] anonymous sign-in failed', normalizedError)
+    throw normalizedError
   }
 }
 
@@ -95,4 +116,31 @@ async function safeGetLoginState(auth) {
     console.warn('[cloudbase] getLoginState failed, continue in guest mode during development', error)
     return null
   }
+}
+
+function normalizeCloudbaseError(error) {
+  const rawMessage = String(
+    error?.message
+    || error?.error
+    || error?.errMsg
+    || error?.error_description
+    || ''
+  )
+  const normalizedMessage = rawMessage.toLowerCase()
+
+  if (
+    normalizedMessage.includes('network request error')
+    || normalizedMessage.includes('invalid_request_source')
+    || normalizedMessage.includes('cors')
+  ) {
+    const domain = typeof window !== 'undefined' ? window.location.origin : '当前站点域名'
+    const wrapped = new Error(
+      `CloudBase 网络请求失败。请优先检查：1）CloudBase 控制台已开启匿名登录；2）已将 ${domain} 加入 Web 安全域名；3）若使用 Vercel 预览域名，请确认当前访问域名也已加入白名单。`
+    )
+    wrapped.cause = error
+    wrapped.code = error?.code || 'NETWORK_REQUEST_ERROR'
+    return wrapped
+  }
+
+  return error instanceof Error ? error : new Error(rawMessage || 'CloudBase 请求失败')
 }
