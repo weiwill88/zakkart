@@ -69,8 +69,9 @@ const menuGroups = [
     label: '基础资料',
     items: [
       { path: '/products', label: '产品管理', icon: '📋' },
-      { path: '/part-types', label: '配件主数据', icon: '🧩' },
-      { path: '/suppliers', label: '供应商管理', icon: '🏭' }
+      { path: '/part-types', label: '配件管理', icon: '🧩' },
+      { path: '/suppliers', label: '供应商管理', icon: '🏭' },
+      { path: '/inventory', label: '库存管理', icon: '📊' }
     ]
   },
   {
@@ -91,12 +92,6 @@ const menuGroups = [
     items: [
       { path: '/shipments', label: '发货管理', icon: '🚚' },
       { path: '/freight', label: '货代单据', icon: '📦' }
-    ]
-  },
-  {
-    label: '库存',
-    items: [
-      { path: '/inventory', label: '库存管理', icon: '📊' }
     ]
   },
   {

@@ -10,7 +10,7 @@
         <el-tag :type="statusTagType(contract.status)" v-if="contract.status">{{ statusLabel(contract.status) }}</el-tag>
       </div>
       <div class="header-actions">
-        <el-button v-if="canEdit" @click="editing = !editing">
+        <el-button v-if="canEdit" @click="toggleEditing">
           {{ editing ? '取消编辑' : '编辑合同' }}
         </el-button>
         <el-button v-if="canEdit && editing" type="primary" :loading="saving" @click="handleSave">
@@ -45,13 +45,10 @@
         <el-descriptions-item label="产品">{{ contract.product_name }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ formatDate(contract.created_at) }}</el-descriptions-item>
         <el-descriptions-item label="订金比例">
-          <template v-if="editing">
-            <el-input-number v-model="editForm.deposit_ratio" :min="0" :max="1" :step="0.05" :precision="2" size="small" style="width: 120px" />
-          </template>
-          <template v-else>{{ ((contract.deposit_ratio || 0.3) * 100).toFixed(0) }}%</template>
+          {{ ((contract.deposit_ratio || 0.3) * 100).toFixed(0) }}%
         </el-descriptions-item>
         <el-descriptions-item label="尾款比例">
-          {{ ((1 - (editing ? editForm.deposit_ratio : (contract.deposit_ratio || 0.3))) * 100).toFixed(0) }}%
+          {{ ((contract.final_ratio || 0.7) * 100).toFixed(0) }}%
         </el-descriptions-item>
         <el-descriptions-item label="合同总金额">
           <strong>{{ (contract.total_amount || 0).toLocaleString() }} 元</strong>
@@ -70,10 +67,20 @@
       </el-descriptions>
     </el-card>
 
+    <el-card shadow="never" class="section-card">
+      <template #header><span class="section-title">合同原文</span></template>
+      <ContractDocumentEditor
+        v-if="draftContract"
+        :contract="draftContract"
+        :editable="editing"
+        :allow-row-delete="editing && batches.length === 0"
+      />
+    </el-card>
+
     <!-- Contract Items -->
     <el-card shadow="never" class="section-card">
       <template #header><span class="section-title">合同明细</span></template>
-      <el-table :data="editing ? editForm.items : (contract.items || [])" border>
+      <el-table :data="contract.items || []" border>
         <el-table-column prop="sku_spec" label="SKU 规格" width="200" />
         <el-table-column prop="part_name" label="配件名称" />
         <el-table-column label="数量" width="120" align="right">
@@ -81,17 +88,7 @@
         </el-table-column>
         <el-table-column label="单价 (元)" width="150">
           <template #default="{ row }">
-            <el-input-number
-              v-if="editing"
-              v-model="row.unit_price"
-              :min="0"
-              :precision="2"
-              controls-position="right"
-              size="small"
-              style="width: 120px"
-              @change="recalcItemAmount(row)"
-            />
-            <span v-else>{{ row.unit_price != null ? row.unit_price.toFixed(2) : '-' }}</span>
+            <span>{{ row.unit_price != null ? row.unit_price.toFixed(2) : '-' }}</span>
           </template>
         </el-table-column>
         <el-table-column label="金额 (元)" width="130" align="right">
@@ -194,7 +191,9 @@ import { fetchContractDetail, updateContract, exportContractWord, pushContractCo
 import { fetchBatchList, createBatch, updateBatch, deleteBatch } from '../../services/batch'
 import { uploadCloudFile } from '../../services/cloudbase'
 import { buildContractWord } from '../../utils/contractWord'
+import { buildContractUpdatePayload, createContractDraftFromDetail } from '../../utils/contractDocument'
 import { getContractStatusLabel, getContractStatusTagType, getGoodsStatusLabel, getGoodsStatusTagType, getSupplierConfirmStatusLabel, getSupplierConfirmStatusTagType } from '../../utils/status'
+import ContractDocumentEditor from '../../components/contracts/ContractDocumentEditor.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -207,7 +206,7 @@ const saving = ref(false)
 const exporting = ref(false)
 const pushingConfirm = ref(false)
 const viewingSignedPdf = ref(false)
-const editForm = ref({ items: [], deposit_ratio: 0.3 })
+const draftContract = ref(null)
 
 // Batch dialog
 const showBatchDialog = ref(false)
@@ -235,10 +234,6 @@ function isBatchDeletable(batch) {
   return (batch.parts || []).every(p => p.status === 'PENDING_PRODUCTION')
 }
 
-function recalcItemAmount(item) {
-  item.amount = (item.quantity || 0) * (item.unit_price || 0)
-}
-
 async function loadContract() {
   loading.value = true
   try {
@@ -249,12 +244,7 @@ async function loadContract() {
     ])
     contract.value = contractData
     batches.value = batchData.list || []
-
-    // Prepare edit form
-    editForm.value = {
-      deposit_ratio: contractData.deposit_ratio || 0.3,
-      items: (contractData.items || []).map(item => ({ ...item }))
-    }
+    draftContract.value = createContractDraftFromDetail(contractData)
   } catch (e) {
     ElMessage.error(e.message || '加载合同详情失败')
   } finally {
@@ -262,22 +252,21 @@ async function loadContract() {
   }
 }
 
+function toggleEditing() {
+  if (editing.value) {
+    editing.value = false
+    draftContract.value = createContractDraftFromDetail(contract.value)
+  } else {
+    editing.value = true
+    draftContract.value = createContractDraftFromDetail(contract.value)
+  }
+}
+
 async function handleSave() {
+  if (!draftContract.value) return
   saving.value = true
   try {
-    // Recalculate amounts
-    const items = editForm.value.items.map(item => ({
-      ...item,
-      amount: (item.quantity || 0) * (item.unit_price || 0)
-    }))
-    const totalAmount = items.reduce((sum, item) => sum + item.amount, 0)
-
-    await updateContract(route.params.id, {
-      items,
-      deposit_ratio: editForm.value.deposit_ratio,
-      final_ratio: 1 - editForm.value.deposit_ratio,
-      total_amount: totalAmount
-    })
+    await updateContract(route.params.id, buildContractUpdatePayload(draftContract.value))
 
     ElMessage.success('合同已保存')
     editing.value = false
@@ -293,34 +282,9 @@ async function handleExportWord() {
   exporting.value = true
   try {
     const result = await exportContractWord(route.params.id)
-    // Generate Word on frontend — ContractDetail uses exportWord API data
     const { Packer } = await import('docx')
     const { saveAs } = await import('file-saver')
-    const doc = buildContractWord({
-      contractNo: result.contract.contract_no,
-      supplierName: result.contract.supplier_name,
-      legalPerson: result.supplier?.legal_person || result.contract.supplier_legal_person || '',
-      creditCode: result.supplier?.credit_code || result.contract.supplier_credit_code || '',
-      address: result.supplier?.address || result.contract.supplier_address || '',
-      phone: result.supplier?.contact_phone || result.contract.supplier_phone || '',
-      productDesc: result.contract.product_desc || '',
-      productItems: (result.contract.items || []).map(item => ({
-        partName: item.part_name,
-        weight: '',
-        colors: '',
-        qtyDetail: String(item.quantity),
-        totalQty: item.quantity,
-        unitPrice: item.unit_price ? String(item.unit_price) : ''
-      })),
-      rawMaterials: result.contract.raw_materials || '',
-      depositRate: String((result.contract.deposit_ratio || 0.3) * 100),
-      balanceRate: String((result.contract.final_ratio || 0.7) * 100),
-      bankName: result.supplier?.bank_info?.bank_name || result.contract.supplier_bank_name || '',
-      bankAccount: result.supplier?.bank_info?.bank_account || result.contract.supplier_bank_account || '',
-      bankBranch: result.supplier?.bank_info?.bank_branch || result.contract.supplier_bank_branch || '',
-      deliveryCols: [],
-      deliveryRows: result.contract.delivery_rows || []
-    })
+    const doc = buildContractWord(createContractDraftFromDetail(result.contract))
     const blob = await Packer.toBlob(doc)
     saveAs(blob, `${result.contract.contract_no || '合同'}.docx`)
     ElMessage.success('Word 文件已生成并下载')

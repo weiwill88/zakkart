@@ -1,0 +1,45 @@
+.contract-header-card { padding: 32rpx !important; }
+.contract-no { font-size: var(--font-size-lg); font-weight: 700; }
+.contract-product { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; margin-top: 8rpx; margin-bottom: 24rpx; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20rpx; padding: 20rpx 0; border-top: 1rpx solid var(--color-border-light); border-bottom: 1rpx solid var(--color-border-light); }
+.info-cell { display: flex; flex-direction: column; }
+.info-cell .info-label { font-size: var(--font-size-xs); color: var(--color-text-placeholder); }
+.info-cell .info-value { font-size: var(--font-size-base); font-weight: 500; margin-top: 4rpx; }
+.info-cell .info-value.highlight { color: var(--color-primary); font-size: var(--font-size-lg); }
+.progress-section { margin-top: 24rpx; }
+.info-row { display: flex; justify-content: space-between; gap: 20rpx; padding: 10rpx 0; }
+.info-label { font-size: var(--font-size-sm); color: var(--color-text-secondary); }
+.info-value { flex: 1; text-align: right; font-size: var(--font-size-sm); color: var(--color-text-primary); }
+.batch-card { padding: 28rpx 32rpx !important; }
+.batch-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20rpx; }
+.batch-no { font-size: var(--font-size-base); font-weight: 600; display: block; }
+.batch-date { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; margin-top: 4rpx; }
+.variant-table { border: 1rpx solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.variant-header { display: flex; background: var(--color-bg-page); padding: 12rpx 16rpx; }
+.variant-row { display: flex; padding: 12rpx 16rpx; border-top: 1rpx solid var(--color-border-light); }
+.variant-col { font-size: var(--font-size-sm); }
+.variant-col.name { flex: 2; }
+.variant-col.qty { flex: 1; text-align: center; }
+.variant-header .variant-col { font-weight: 500; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.diff-highlight { color: var(--color-danger); font-weight: 600; }
+.batch-actions { margin-top: 20rpx; }
+
+.document-card { padding: 32rpx !important; }
+.document-title-row { margin-bottom: 24rpx; }
+.document-contract-no { display: block; text-align: right; font-size: 22rpx; color: var(--color-text-secondary); }
+.document-title { display: block; text-align: center; font-size: 40rpx; font-weight: 700; margin-top: 12rpx; letter-spacing: 8rpx; }
+.document-section { margin-top: 24rpx; }
+.document-subtitle { display: block; font-size: 28rpx; font-weight: 700; margin-bottom: 12rpx; }
+.document-line { display: block; font-size: 24rpx; color: var(--color-text-primary); line-height: 1.8; margin-bottom: 8rpx; white-space: pre-wrap; }
+.document-paragraph { display: block; font-size: 24rpx; color: var(--color-text-primary); line-height: 1.9; white-space: pre-wrap; }
+.doc-table-scroll { width: 100%; margin: 12rpx 0 20rpx; }
+.doc-table { min-width: 980rpx; border: 1rpx solid var(--color-border); border-radius: 16rpx; overflow: hidden; }
+.doc-table.wide { min-width: 1200rpx; }
+.doc-table-header, .doc-table-row { display: flex; }
+.doc-table-header { background: var(--color-bg-page); }
+.doc-table-row { border-top: 1rpx solid var(--color-border-light); }
+.doc-table-row.total { background: #fff7ed; font-weight: 600; }
+.doc-cell { flex: 1; padding: 16rpx 12rpx; font-size: 22rpx; text-align: center; border-right: 1rpx solid var(--color-border-light); white-space: pre-wrap; }
+.doc-cell.lg { flex: 1.4; }
+.doc-table-header .doc-cell { font-weight: 600; color: var(--color-text-secondary); }
+.doc-table-header .doc-cell:last-child, .doc-table-row .doc-cell:last-child { border-right: none; }

@@ -192,12 +192,39 @@
           </el-dialog>
         </el-tab-pane>
 
-        <!-- Tab 4: 历史合同 -->
-        <el-tab-pane label="历史合同" name="contracts">
-          <el-empty description="暂无合同记录（合同管理功能将在阶段 2 上线）" />
+        <el-tab-pane label="原材料管理" name="materials">
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 16px">
+            <el-button type="primary" size="small" @click="addRawMaterial">新增原材料</el-button>
+          </div>
+          <el-table :data="rawMaterials" border stripe size="small">
+            <el-table-column prop="name" label="原材料名称" min-width="220">
+              <template #default="{ row }">
+                <el-input v-model="row.name" size="small" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="note" label="备注" min-width="220">
+              <template #default="{ row }">
+                <el-input v-model="row.note" size="small" placeholder="如：用于垫子面料" />
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="120" align="center">
+              <template #default="{ $index }">
+                <el-button text type="danger" size="small" @click="removeRawMaterial($index)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-if="rawMaterials.length === 0" description="暂无原材料配置" />
+          <div style="margin-top: 16px; text-align: right">
+            <el-button type="primary" :loading="rawMaterialSaving" @click="saveRawMaterials">保存原材料配置</el-button>
+          </div>
         </el-tab-pane>
 
-        <!-- Tab 5: 配件价格 -->
+        <!-- Tab 5: 历史合同 -->
+        <el-tab-pane label="历史合同" name="contracts">
+          <el-empty description="暂无合同记录" />
+        </el-tab-pane>
+
+        <!-- Tab 6: 配件价格 -->
         <el-tab-pane label="配件价格" name="prices">
           <el-table :data="partPrices" border stripe v-loading="priceLoading" size="small">
             <el-table-column prop="name" label="配件名称" min-width="200" />
@@ -238,7 +265,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { fetchOrgDetail, updateOrg, fetchMembers, addMember, deleteMember, fetchPartPrices, updatePartPrice } from '../../services/organization'
+import { fetchOrgDetail, updateOrg, fetchMembers, addMember, deleteMember, fetchPartPrices, updatePartPrice, fetchRawMaterials, updateRawMaterials } from '../../services/organization'
 import { fetchAddressList, createAddress, updateAddress, deleteAddress } from '../../services/address'
 
 const route = useRoute()
@@ -274,6 +301,8 @@ const memberForm = ref({ name: '', phone: '', role: 'supplier_member' })
 // Price tab
 const partPrices = ref([])
 const priceLoading = ref(false)
+const rawMaterials = ref([])
+const rawMaterialSaving = ref(false)
 
 async function loadOrg() {
   loading.value = true
@@ -322,6 +351,40 @@ async function saveInfo() {
     ElMessage.error(e.message || '保存失败')
   } finally {
     saving.value = false
+  }
+}
+
+async function loadRawMaterials() {
+  try {
+    const result = await fetchRawMaterials(orgId)
+    rawMaterials.value = result.list || []
+  } catch (e) {
+    rawMaterials.value = []
+  }
+}
+
+function addRawMaterial() {
+  rawMaterials.value.push({
+    material_id: `rm_${Date.now()}`,
+    name: '',
+    note: ''
+  })
+}
+
+function removeRawMaterial(index) {
+  rawMaterials.value.splice(index, 1)
+}
+
+async function saveRawMaterials() {
+  rawMaterialSaving.value = true
+  try {
+    const result = await updateRawMaterials(orgId, rawMaterials.value)
+    rawMaterials.value = result.list || []
+    ElMessage.success('原材料配置已保存')
+  } catch (e) {
+    ElMessage.error(e.message || '保存原材料失败')
+  } finally {
+    rawMaterialSaving.value = false
   }
 }
 
@@ -460,6 +523,7 @@ function handlePriceNoteChange(partTypeId, note) {
 watch(activeTab, (tab) => {
   if (tab === 'address' && addresses.value.length === 0) loadAddresses()
   if (tab === 'members' && members.value.length === 0) loadMembers()
+  if (tab === 'materials' && rawMaterials.value.length === 0) loadRawMaterials()
   if (tab === 'prices' && partPrices.value.length === 0) loadPrices()
 })
 
@@ -469,5 +533,6 @@ onMounted(() => {
   loadOrg()
   // Pre-load addresses since it's commonly needed
   loadAddresses()
+  loadRawMaterials()
 })
 </script>

@@ -178,18 +178,18 @@
     <el-dialog v-model="showBomDialog" :title="bomDialogTitle" width="960px" @closed="resetBomForm">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
         <div style="font-size: 13px; color: var(--color-text-secondary)">
-          这里选择的是“配件主数据项”，不是产品类别。供应商会从配件主数据自动带出。
+          这里选择的是“配件管理项”，不是产品类别。供应商会从配件管理自动带出。
         </div>
         <div style="display: flex; gap: 8px">
-          <el-button size="small" @click="router.push('/part-types')">管理配件主数据</el-button>
+          <el-button size="small" @click="router.push('/part-types')">管理配件管理项</el-button>
           <el-button type="primary" size="small" @click="addBomRow">新增配件</el-button>
         </div>
       </div>
       <div style="margin-bottom: 12px; font-size: 12px; color: var(--color-text-muted)">
-        当前可选类别：{{ partTypeCategories.join(' / ') || '暂无配件主数据' }}
+        当前可选类别：{{ partTypeCategories.join(' / ') || '暂无配件管理数据' }}
       </div>
       <el-table :data="bomForm" border size="small">
-        <el-table-column label="配件主数据项" min-width="260">
+        <el-table-column label="配件管理项" min-width="260">
           <template #default="{ row, $index }">
             <el-select
               v-model="row.part_type_id"

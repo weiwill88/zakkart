@@ -22,6 +22,14 @@ export async function updateOrg(id, data) {
   return callApi('organization.update', { id, ...data }, { token: getToken() })
 }
 
+export async function fetchRawMaterials(orgId) {
+  return callApi('organization.rawMaterials', { orgId }, { token: getToken() })
+}
+
+export async function updateRawMaterials(orgId, list) {
+  return callApi('organization.updateRawMaterials', { orgId, list }, { token: getToken() })
+}
+
 export async function fetchMembers(orgId) {
   return callApi('organization.memberList', { orgId }, { token: getToken() })
 }

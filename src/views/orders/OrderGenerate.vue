@@ -115,166 +115,14 @@
               <el-button size="small" type="primary" @click="exportContract(ci)">导出此份合同 Word</el-button>
             </div>
           </div>
-          <div class="contract-doc">
-            <div class="contract-header">
-              <div class="contract-number">合同编号：<input v-model="c.contractNo" class="contract-input" style="width: 280px" /></div>
-              <h2 class="contract-title">采 购 合 同</h2>
-            </div>
+          <ContractDocumentEditor :contract="c" editable allow-row-delete />
 
-            <!-- 甲乙方信息 -->
-            <div class="contract-parties">
-              <div class="party-row"><span class="party-label">采购方（甲方）：</span><span class="party-value">上海掇骁贸易有限公司</span></div>
-              <div class="party-row"><span class="party-label">法定代表人：</span><span class="party-value">闵一</span></div>
-              <div class="party-row"><span class="party-label">统一社会信用代码：</span><span class="party-value">91310109MACHK7GN2R</span></div>
-              <div class="party-row"><span class="party-label">地址：</span><span class="party-value">上海市虹口区同心路723号13幢5321室</span></div>
-              <div class="party-row"><span class="party-label">联系方式：</span><span class="party-value">13262515903</span></div>
-              <div style="height: 12px" />
-              <div class="party-row"><span class="party-label">供货方（乙方）：</span><span class="party-value">{{ c.supplierName }}</span></div>
-              <div class="party-row"><span class="party-label">法定代表人：</span><span class="party-value">{{ c.legalPerson }}</span></div>
-              <div class="party-row"><span class="party-label">统一社会信用代码：</span><span class="party-value">{{ c.creditCode }}</span></div>
-              <div class="party-row"><span class="party-label">地址：</span><input v-model="c.address" class="contract-input" style="width: 400px" placeholder="请填写乙方地址" /></div>
-              <div class="party-row"><span class="party-label">联系方式：</span><input v-model="c.phone" class="contract-input" style="width: 200px" placeholder="请填写联系电话" /></div>
-            </div>
-
-            <!-- 前言 -->
-            <p class="contract-text">
-              经甲乙双方充分协商，根据《中华人民共和国合同法》及相关法律法规的有关规定，秉承公平、自愿、诚信的合作原则，就甲方向乙方采购
-              <input v-model="c.productDesc" class="contract-input" style="width: 200px" placeholder="产品描述" />
-              产品用以生产组装宠物吊床产品的事宜，双方订立本采购合同，并承诺共同遵守。
-            </p>
-
-            <!-- 一、采购货物说明 -->
-            <h3 class="contract-section">一、采购货物说明：<input v-model="c.productDesc" class="contract-input" style="width: 160px" /></h3>
-            <table class="contract-table">
-              <thead>
-                <tr>
-                  <th>产品规格和尺寸标准</th>
-                  <th>产品型号</th>
-                  <th>产品重量</th>
-                  <th>产品颜色</th>
-                  <th>采购数量</th>
-                  <th>采购单价（含税）</th>
-                  <th>采购金额（含税）</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(item, idx) in c.productItems" :key="idx">
-                  <td>以产前样品为准</td>
-                  <td style="font-weight: 600">{{ item.partName }}</td>
-                  <td><input v-model="item.weight" class="contract-input-sm" placeholder="克/件" /></td>
-                  <td>{{ item.colors }}</td>
-                  <td style="white-space: pre-line">{{ item.qtyDetail }}</td>
-                  <td><input v-model="item.unitPrice" class="contract-input-sm" placeholder="元/件" @input="calcItemTotal(c)" /></td>
-                  <td style="font-weight: 600">{{ calcItemAmount(item) }}</td>
-                </tr>
-                <tr class="total-row">
-                  <td colspan="6" style="text-align: right; font-weight: 600">合计采购总金额（含税）</td>
-                  <td style="font-weight: 700; color: var(--color-danger)">{{ calcGrandTotal(c) }}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <p class="contract-text"><strong>1. 成品货物要求：</strong>乙方生产货物的各项尺寸需要同附录一的产品规格和尺寸说明相符且产品颜色需要同甲乙双方确认的产品的产前样色卡相符，同时成品货物不能出现缝合线开线、布料缝合处有毛边、产品本身不整洁、棉花填充不均匀不足量、布料克重材质不达标等明显的质量问题。</p>
-            <p class="contract-text"><strong>2. 乙方负责本合同产品生产的原材料有：</strong><textarea v-model="c.rawMaterials" class="contract-textarea" placeholder="请填写乙方需负责的原材料清单" /></p>
-            <p class="contract-text"><strong>3.</strong> 货物实际生产时，上述产品尺寸、规格、重量、颜色发生调整改动的以双方认同的产品产前样为准。</p>
-
-            <!-- 二、交付时间 -->
-            <h3 class="contract-section">二、产品采购下单方式及产品交付时间：</h3>
-            <p class="contract-text">本合同约定的采购产品，乙方承诺按下面的交付计划表完成全部产品的生产和包装工序并可交付甲方提货；</p>
-
-            <!-- 交付计划在线表格 -->
-            <table class="contract-table delivery-table">
-              <thead>
-                <tr>
-                  <th style="width: 140px">交付提货时间</th>
-                  <th v-for="col in c.deliveryCols" :key="col">{{ col }}</th>
-                  <th style="width: 80px">总数量</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(row, ri) in c.deliveryRows" :key="ri">
-                  <td>
-                    <input v-model="row.date" class="contract-input-sm" style="width: 110px" placeholder="YYYY/M/D" />
-                  </td>
-                  <td v-for="col in c.deliveryCols" :key="col">
-                    <input v-model.number="row.qtys[col]" class="contract-input-sm" style="width: 60px; text-align: center" placeholder="0" @input="calcDeliveryRowTotal(row, c.deliveryCols)" />
-                  </td>
-                  <td style="font-weight: 600; text-align: center">{{ row.rowTotal || 0 }}</td>
-                </tr>
-                <tr class="total-row">
-                  <td style="font-weight: 600; text-align: center">总数</td>
-                  <td v-for="col in c.deliveryCols" :key="col" style="font-weight: 600; text-align: center">{{ calcDeliveryColTotal(c, col) }}</td>
-                  <td style="font-weight: 700; text-align: center">{{ calcDeliveryGrandTotal(c) }}</td>
-                </tr>
-              </tbody>
-            </table>
-            <div style="margin: 8px 0">
-              <el-button text type="primary" size="small" @click="addDeliveryRow(c)">+ 增加一行</el-button>
-              <el-button text type="danger" size="small" @click="c.deliveryRows.pop()" v-if="c.deliveryRows.length > 1">- 删除最后一行</el-button>
-            </div>
-
-            <!-- 三、产品合格率 -->
-            <h3 class="contract-section">三、产品合格率与产品返工要求：</h3>
-            <p class="contract-text">如乙方生产的货品中，有不符合本协议约定的产品标准和要求以及产品包装要求的货品（以下简称"不合格品"），则乙方保证在3个自然日内，对不合格品进行返工重做并承担返工所需的成本费用。且乙方保证本次所生产全部货品的不合格品率（不合格品率=不合格品/采购数量）在1%以下。</p>
-
-            <!-- 四、支付方式 -->
-            <h3 class="contract-section">四、支付方式：</h3>
-            <p class="contract-text">
-              甲方承诺在合同签署后，货物生产前将货物采购订金支付至乙方指定银行账户，采购订金为货物采购总金额的
-              <input v-model="c.depositRate" class="contract-input-sm" style="width: 60px" placeholder="30" />%，
-              乙方完成全部货物的生产后，甲方对乙方生产货物进行现场验收，并向乙方支付剩余
-              <input v-model="c.balanceRate" class="contract-input-sm" style="width: 60px" placeholder="70" />%的采购尾款，
-              如甲方验收时发现不合格品，则不合格品的尾款待乙方完成返工并交付甲方后，由甲方立即支付给乙方。
-            </p>
-            <div class="contract-text">
-              <strong>乙方指定的收款账户信息如下：</strong><br />
-              户名：<input v-model="c.bankName" class="contract-input" style="width: 280px" :placeholder="c.supplierName" /><br />
-              账户号：<input v-model="c.bankAccount" class="contract-input" style="width: 280px" placeholder="请填写银行账号" /><br />
-              开户行：<input v-model="c.bankBranch" class="contract-input" style="width: 280px" placeholder="请填写开户行" />
-            </div>
-
-            <!-- 五、增值税发票 -->
-            <h3 class="contract-section">五、增值税专用发票开票信息：</h3>
-            <p class="contract-text">乙方在收到甲方通知乙方开具发票时，乙方须在3个工作日内按本合同中甲方要求的开票信息为甲方开具增值税专用发票，开票信息如下：</p>
-            <div class="contract-text" style="padding-left: 16px">
-              名称：上海掇骁贸易有限公司<br/>
-              税号：91310109MACHK7GN2R<br/>
-              开户行：中信银行黄浦支行 8110201012001655475<br/>
-              联系地址：上海市虹口区同心路723号13幢5321室 13917000290
-            </div>
-
-            <!-- 六~九 -->
-            <h3 class="contract-section">六、甲方的权利与责任：</h3>
-            <p class="contract-text">1) 合同签署后甲方须及时向乙方支付采购订金，并按合同约定时间及时向乙方支付采购货物的尾款。</p>
-            <p class="contract-text">2) 甲方须在乙方完成货物生产后，及时对货物进行验收。</p>
-
-            <h3 class="contract-section">七、乙方的权利与责任：</h3>
-            <p class="contract-text">1) 确保货物的规格质量与货物生产前寄给甲方的各批次产品对应的产前样品相符，并符合上述产品规格和尺寸说明的标准及成品要求。</p>
-            <p class="contract-text">2) 确保甲方在完成采购订金的支付后，乙方按本合同中约定的时间按时完成货物的生产与包装。</p>
-            <p class="contract-text">3) 如乙方未遵守上述约定，则甲方有权利要求乙方退或更换该次采购的部分或全部货品。</p>
-
-            <h3 class="contract-section">八、法律适用与争议的解决</h3>
-            <p class="contract-text">1) 本合同的有效性、解释、执行及争议解决适用中华人民共和国的法律和法规。</p>
-            <p class="contract-text">2) 因履行本合同产生的或与本合同有关的任何争议，应由甲乙双方友好协商解决，协商不成的，任何一方有权将争议提交原告方住所地人民法院解决。</p>
-
-            <h3 class="contract-section">九、合同生效、变更及终止</h3>
-            <p class="contract-text">1) 本合同未尽事宜，双方可另行订立补充合同。本合同补充合同、附件、附录、合同订单为本合同不可分割的有效组成部分，与本合同具有同等的法律效力。</p>
-            <p class="contract-text">2) 本合同一式两份，甲乙双方各执一份，具有同等法律效力。</p>
-
-            <!-- 签章区 -->
-            <div class="contract-sign">
-              <div class="sign-col"><p><strong>甲方（盖章）：</strong></p><p style="margin-top: 48px">日期：</p></div>
-              <div class="sign-col"><p><strong>乙方（盖章）：</strong></p><p style="margin-top: 48px">日期：</p></div>
-            </div>
-            <div style="text-align: center; margin-top: 16px; font-size: 12px; color: var(--color-text-muted)">上海掇骁贸易有限公司</div>
-
-            <div style="text-align: right; margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--color-border)">
-              <el-button @click="saveContract(ci)" :loading="isSaving(c)">保存此份草稿</el-button>
-              <el-button type="warning" @click="pushContract(ci)" :loading="isPushing(c)" :disabled="!canPushConfirm(c)">
-                {{ pushButtonLabel(c) }}
-              </el-button>
-              <el-button type="primary" @click="exportContract(ci)">导出此份合同 Word</el-button>
-            </div>
+          <div style="text-align: right; margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--color-border)">
+            <el-button @click="saveContract(ci)" :loading="isSaving(c)">保存此份草稿</el-button>
+            <el-button type="warning" @click="pushContract(ci)" :loading="isPushing(c)" :disabled="!canPushConfirm(c)">
+              {{ pushButtonLabel(c) }}
+            </el-button>
+            <el-button type="primary" @click="exportContract(ci)">导出此份合同 Word</el-button>
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -289,9 +137,15 @@ import { fetchProductList } from '../../services/product'
 import { pushContractConfirm, updateContract } from '../../services/contract'
 import { generateOrder as generateOrderApi } from '../../services/order'
 import { buildContractWord } from '../../utils/contractWord'
+import {
+  buildContractUpdatePayload,
+  createContractDraftFromGenerated,
+  ensureContractShape
+} from '../../utils/contractDocument'
 import { getContractStatusLabel, getContractStatusTagType, getSupplierConfirmStatusLabel, getSupplierConfirmStatusTagType } from '../../utils/status'
 import { saveAs } from 'file-saver'
 import { Packer } from 'docx'
+import ContractDocumentEditor from '../../components/contracts/ContractDocumentEditor.vue'
 
 const products = ref([])
 const selectedProductId = ref('')
@@ -406,54 +260,10 @@ async function generateOrder() {
       }))
     })
 
-    contracts.value = (result.contracts || []).map(contract => {
-      const mergedItems = mergeItems((contract.items || []).map(item => ({
-        skuId: item.sku_id,
-        skuSpec: item.sku_spec,
-        partTypeId: item.part_type_id,
-        partName: item.part_name,
-        variant: item.sku_spec || '',
-        totalQty: item.quantity,
-        unitPrice: item.unit_price
-      })))
-      const deliveryCols = mergedItems.map(item => item.partName)
-
-      return {
-        orgId: contract.supplierOrgId,
-        contractNo: contract.contractNo,
-        supplierName: contract.supplierName || '',
-        legalPerson: contract.legalPerson || '',
-        creditCode: contract.creditCode || '',
-        address: contract.address || '',
-        phone: contract.phone || '',
-        productDesc: getProductDesc((contract.items || []).map(item => ({
-          partName: item.part_name
-        }))),
-        productItems: mergedItems.map(item => ({
-          partName: item.partName,
-          weight: '',
-          colors: item.colors,
-          qtyDetail: item.qtyDetail,
-          totalQty: item.totalQty,
-          unitPrice: item.unitPrice != null ? String(item.unitPrice) : '',
-          totalPrice: '',
-          sourceItems: item.sourceItems
-        })),
-        rawMaterials: '',
-        depositRate: '30',
-        balanceRate: '70',
-        bankName: contract.bankInfo?.bank_name || contract.supplierName || '',
-        bankAccount: contract.bankInfo?.bank_account || '',
-        bankBranch: contract.bankInfo?.bank_branch || '',
-        deliveryCols,
-        deliveryRows: [buildEmptyDeliveryRow(deliveryCols)],
-        _productId: contract.productId,
-        _productName: contract.productName,
-        _status: contract.status || 'DRAFT',
-        _supplierConfirmStatus: contract.supplierConfirmStatus || 'UNSENT',
-        _savedId: contract.contractId,
-        _items: contract.items || []
-      }
+    contracts.value = (result.contracts || []).map((contract) => {
+      const draft = createContractDraftFromGenerated(contract)
+      ensureContractShape(draft)
+      return draft
     })
 
     activeContract.value = '0'
@@ -461,82 +271,6 @@ async function generateOrder() {
   } catch (error) {
     ElMessage.error(error.message || '生成订单失败')
   }
-}
-
-function mergeItems(items) {
-  const map = {}
-  items.forEach(item => {
-    const key = item.partName
-    if (!map[key]) {
-      map[key] = { partName: item.partName, totalQty: 0, skuDetails: [], colors: new Set(), unitPrice: item.unitPrice, sourceItems: [] }
-    }
-    map[key].totalQty += item.totalQty
-    map[key].skuDetails.push(`${item.variant || item.skuId}：${item.totalQty}件`)
-    if (item.variant) map[key].colors.add(item.variant.replace(/.*-/, ''))
-    map[key].sourceItems.push(item)
-  })
-  return Object.values(map).map(m => ({
-    partName: m.partName,
-    totalQty: m.totalQty,
-    colors: [...m.colors].join('、') || '-',
-    qtyDetail: m.skuDetails.join('\n'),
-    unitPrice: m.unitPrice,
-    sourceItems: m.sourceItems
-  }))
-}
-
-function getProductDesc(items) {
-  const partNames = new Set()
-  items.forEach(item => {
-    const category = item.partName.replace(/[-—].*$/, '').replace(/\d+.*$/, '')
-    partNames.add(category)
-  })
-  return [...partNames].join('、') || '配件'
-}
-
-// Delivery plan helpers
-function buildEmptyDeliveryRow(cols) {
-  const qtys = {}
-  cols.forEach(col => { qtys[col] = 0 })
-  return { date: '', qtys, rowTotal: 0 }
-}
-
-function addDeliveryRow(c) {
-  c.deliveryRows.push(buildEmptyDeliveryRow(c.deliveryCols))
-}
-
-function calcDeliveryRowTotal(row, cols) {
-  row.rowTotal = cols.reduce((sum, col) => sum + (Number(row.qtys[col]) || 0), 0)
-}
-
-function calcDeliveryColTotal(c, col) {
-  return c.deliveryRows.reduce((sum, row) => sum + (Number(row.qtys[col]) || 0), 0)
-}
-
-function calcDeliveryGrandTotal(c) {
-  return c.deliveryRows.reduce((sum, row) => sum + (row.rowTotal || 0), 0)
-}
-
-// Price calculation
-function calcItemAmount(item) {
-  const price = parseFloat(item.unitPrice)
-  if (!price || isNaN(price)) return '自动计算'
-  const amount = price * item.totalQty
-  return amount.toLocaleString() + ' 元'
-}
-
-function calcItemTotal() { /* trigger reactivity */ }
-
-function calcGrandTotal(c) {
-  let total = 0
-  let allPriced = true
-  for (const item of c.productItems) {
-    const price = parseFloat(item.unitPrice)
-    if (!price || isNaN(price)) { allPriced = false; continue }
-    total += price * item.totalQty
-  }
-  if (!allPriced && total === 0) return '待填写单价后自动计算'
-  return total.toLocaleString() + ' 元'
 }
 
 // === Save to DB ===
@@ -626,40 +360,6 @@ function exportAllContracts() {
   contracts.value.forEach((_, i) => {
     setTimeout(() => exportContract(i), i * 500)
   })
-}
-
-function findProductItem(contract, partName) {
-  return (contract.productItems || []).find(item => item.partName === partName)
-}
-
-function buildContractUpdatePayload(contract) {
-  const depositRatio = parseFloat(contract.depositRate) / 100 || 0.3
-  const totalAmount = contract.productItems.reduce((sum, item) => {
-    const price = parseFloat(item.unitPrice) || 0
-    return sum + price * item.totalQty
-  }, 0)
-
-  return {
-    contract_no: contract.contractNo,
-    total_amount: totalAmount,
-    deposit_ratio: depositRatio,
-    final_ratio: 1 - depositRatio,
-    items: (contract._items || []).map((item) => ({
-      ...item,
-      unit_price: parseFloat(findProductItem(contract, item.part_name)?.unitPrice) || 0,
-      amount: (parseFloat(findProductItem(contract, item.part_name)?.unitPrice) || 0) * (item.quantity || 0)
-    })),
-    supplier_legal_person: contract.legalPerson,
-    supplier_credit_code: contract.creditCode,
-    supplier_address: contract.address,
-    supplier_phone: contract.phone,
-    supplier_bank_name: contract.bankName,
-    supplier_bank_account: contract.bankAccount,
-    supplier_bank_branch: contract.bankBranch,
-    product_desc: contract.productDesc,
-    raw_materials: contract.rawMaterials,
-    delivery_rows: contract.deliveryRows
-  }
 }
 
 function applyContractState(targetContract, updatedContract) {

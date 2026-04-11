@@ -17,30 +17,87 @@
           <el-option v-for="supplier in suppliers" :key="supplier._id" :label="supplier.name" :value="supplier._id" />
         </el-select>
         <div style="flex: 1" />
-        <el-button type="primary" icon="Plus" @click="openCreateDialog">新增配件主数据</el-button>
+        <el-button v-if="!bulkEditing" type="primary" @click="startBulkEdit">全量编辑</el-button>
+        <template v-else>
+          <el-button @click="cancelBulkEdit">取消全量编辑</el-button>
+          <el-button type="success" :loading="bulkSaving" @click="saveBulkEdit">保存全量编辑</el-button>
+        </template>
+        <el-button type="primary" icon="Plus" @click="openCreateDialog">新增配件管理项</el-button>
       </div>
     </el-card>
 
     <el-card shadow="never">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
         <div style="font-size: 13px; color: var(--color-text-secondary)">
-          配件主数据是 BOM 的统一来源。产品详情里的 BOM 只维护“SKU 使用哪些配件、各多少件”。
+          配件管理是 BOM 的统一来源。产品详情里的 BOM 只维护“SKU 使用哪些配件、各多少件”。
         </div>
         <el-tag type="info">共 {{ list.length }} 项</el-tag>
       </div>
 
-      <el-table :data="list" border stripe v-loading="loading">
+      <el-table :data="tableData" border stripe v-loading="loading">
         <el-table-column type="index" width="50" label="#" />
-        <el-table-column prop="category" label="配件类别" width="150" />
-        <el-table-column prop="name" label="配件名称" min-width="220" />
-        <el-table-column prop="supplier_org_name" label="供应商" min-width="220" />
-        <el-table-column prop="unit" label="单位" width="100" align="center" />
-        <el-table-column label="参考单价" width="140" align="right">
+        <el-table-column label="配件类别" width="150">
           <template #default="{ row }">
-            {{ formatPrice(row.unit_price) }}
+            <el-input v-if="bulkEditing" v-model="row.category" size="small" />
+            <span v-else>{{ row.category }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="price_note" label="价格备注" min-width="180" />
+        <el-table-column label="配件名称" min-width="220">
+          <template #default="{ row }">
+            <el-input v-if="bulkEditing" v-model="row.name" size="small" />
+            <span v-else>{{ row.name }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="材质" width="120">
+          <template #default="{ row }">
+            <el-input v-if="bulkEditing" v-model="row.material" size="small" />
+            <span v-else>{{ row.material || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="颜色" width="120">
+          <template #default="{ row }">
+            <el-input v-if="bulkEditing" v-model="row.color" size="small" />
+            <span v-else>{{ row.color || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="重量" width="120">
+          <template #default="{ row }">
+            <el-input v-if="bulkEditing" v-model="row.weight" size="small" />
+            <span v-else>{{ row.weight || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="尺寸" width="140">
+          <template #default="{ row }">
+            <el-input v-if="bulkEditing" v-model="row.size" size="small" />
+            <span v-else>{{ row.size || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="供应商" min-width="220">
+          <template #default="{ row }">
+            <el-select v-if="bulkEditing" v-model="row.supplier_org_id" filterable size="small" style="width: 100%">
+              <el-option v-for="supplier in suppliers" :key="supplier._id" :label="supplier.name" :value="supplier._id" />
+            </el-select>
+            <span v-else>{{ row.supplier_org_name }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="单位" width="100" align="center">
+          <template #default="{ row }">
+            <el-input v-if="bulkEditing" v-model="row.unit" size="small" />
+            <span v-else>{{ row.unit }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="参考单价" width="140" align="right">
+          <template #default="{ row }">
+            <el-input-number v-if="bulkEditing" v-model="row.unit_price" :min="0" :precision="2" :step="0.5" size="small" style="width: 110px" />
+            <span v-else>{{ formatPrice(row.unit_price) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="价格备注" min-width="180">
+          <template #default="{ row }">
+            <el-input v-if="bulkEditing" v-model="row.price_note" size="small" />
+            <span v-else>{{ row.price_note || '-' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="创建时间" width="180">
           <template #default="{ row }">
             {{ formatDate(row.created_at) }}
@@ -48,12 +105,15 @@
         </el-table-column>
         <el-table-column label="操作" width="170" align="center">
           <template #default="{ row }">
-            <el-button text type="primary" @click="openEditDialog(row)">编辑</el-button>
-            <el-button text type="danger" @click="handleDelete(row)">删除</el-button>
+            <template v-if="!bulkEditing">
+              <el-button text type="primary" @click="openEditDialog(row)">编辑</el-button>
+              <el-button text type="danger" @click="handleDelete(row)">删除</el-button>
+            </template>
+            <span v-else style="color: var(--color-text-muted)">全量编辑中</span>
           </template>
         </el-table-column>
       </el-table>
-      <el-empty v-if="!loading && list.length === 0" description="暂无配件主数据" />
+      <el-empty v-if="!loading && list.length === 0" description="暂无配件管理数据" />
     </el-card>
 
     <el-dialog v-model="showDialog" :title="dialogTitle" width="620px" @closed="resetForm">
@@ -88,6 +148,18 @@
         <el-form-item label="价格备注">
           <el-input v-model="form.price_note" type="textarea" :rows="3" placeholder="如：2026 年 4 月调价" />
         </el-form-item>
+        <el-form-item label="材质">
+          <el-input v-model="form.material" placeholder="如：牛津布 / 铁 / 实木" />
+        </el-form-item>
+        <el-form-item label="颜色">
+          <el-input v-model="form.color" placeholder="如：灰色 / 黑色" />
+        </el-form-item>
+        <el-form-item label="重量">
+          <el-input v-model="form.weight" placeholder="如：350g / 1.2kg" />
+        </el-form-item>
+        <el-form-item label="尺寸">
+          <el-input v-model="form.size" placeholder="如：40x30cm" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showDialog = false">取消</el-button>
@@ -101,7 +173,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { fetchOrgList } from '../../services/organization'
-import { createPartType, deletePartType, fetchPartTypeList, updatePartType } from '../../services/partType'
+import { bulkUpdatePartTypes, createPartType, deletePartType, fetchPartTypeList, updatePartType } from '../../services/partType'
 
 const loading = ref(false)
 const saving = ref(false)
@@ -109,11 +181,14 @@ const showDialog = ref(false)
 const dialogMode = ref('create')
 const editingId = ref('')
 const list = ref([])
+const draftList = ref([])
 const categoryCatalog = ref([])
 const suppliers = ref([])
 const keyword = ref('')
 const categoryFilter = ref('')
 const supplierFilter = ref('')
+const bulkEditing = ref(false)
+const bulkSaving = ref(false)
 
 const form = reactive({
   category: '',
@@ -121,11 +196,16 @@ const form = reactive({
   supplier_org_id: '',
   unit: '件',
   unit_price: null,
-  price_note: ''
+  price_note: '',
+  material: '',
+  color: '',
+  weight: '',
+  size: ''
 })
 
-const dialogTitle = computed(() => (dialogMode.value === 'create' ? '新增配件主数据' : '编辑配件主数据'))
+const dialogTitle = computed(() => (dialogMode.value === 'create' ? '新增配件管理项' : '编辑配件管理项'))
 const categoryOptions = computed(() => [...new Set(categoryCatalog.value)].filter(Boolean).sort((a, b) => a.localeCompare(b, 'zh-CN')))
+const tableData = computed(() => (bulkEditing.value ? draftList.value : list.value))
 
 let searchTimer = null
 
@@ -142,6 +222,10 @@ function resetForm() {
   form.unit = '件'
   form.unit_price = null
   form.price_note = ''
+  form.material = ''
+  form.color = ''
+  form.weight = ''
+  form.size = ''
 }
 
 function openCreateDialog() {
@@ -159,6 +243,10 @@ function openEditDialog(row) {
   form.unit = row.unit || '件'
   form.unit_price = row.unit_price ?? null
   form.price_note = row.price_note || ''
+  form.material = row.material || ''
+  form.color = row.color || ''
+  form.weight = row.weight || ''
+  form.size = row.size || ''
   showDialog.value = true
 }
 
@@ -191,11 +279,49 @@ async function loadList() {
     if (supplierFilter.value) params.supplier_org_id = supplierFilter.value
     const result = await fetchPartTypeList(params)
     list.value = result.list || []
+    draftList.value = JSON.parse(JSON.stringify(list.value))
   } catch (error) {
     console.error('Failed to load part types:', error)
     list.value = []
+    draftList.value = []
   } finally {
     loading.value = false
+  }
+}
+
+function startBulkEdit() {
+  draftList.value = JSON.parse(JSON.stringify(list.value))
+  bulkEditing.value = true
+}
+
+function cancelBulkEdit() {
+  bulkEditing.value = false
+  draftList.value = JSON.parse(JSON.stringify(list.value))
+}
+
+async function saveBulkEdit() {
+  bulkSaving.value = true
+  try {
+    await bulkUpdatePartTypes(draftList.value.map(item => ({
+      id: item._id,
+      category: item.category,
+      name: item.name,
+      supplier_org_id: item.supplier_org_id,
+      unit: item.unit,
+      unit_price: item.unit_price,
+      price_note: item.price_note,
+      material: item.material,
+      color: item.color,
+      weight: item.weight,
+      size: item.size
+    })))
+    ElMessage.success('配件管理已批量更新')
+    bulkEditing.value = false
+    await Promise.all([loadList(), loadCategoryCatalog()])
+  } catch (error) {
+    ElMessage.error(error.message || '批量保存失败')
+  } finally {
+    bulkSaving.value = false
   }
 }
 
@@ -213,15 +339,19 @@ async function savePartType() {
       supplier_org_id: form.supplier_org_id,
       unit: form.unit.trim(),
       unit_price: form.unit_price,
-      price_note: form.price_note.trim()
+      price_note: form.price_note.trim(),
+      material: form.material.trim(),
+      color: form.color.trim(),
+      weight: form.weight.trim(),
+      size: form.size.trim()
     }
 
     if (dialogMode.value === 'create') {
       await createPartType(payload)
-      ElMessage.success('配件主数据已创建')
+      ElMessage.success('配件管理项已创建')
     } else {
       await updatePartType(editingId.value, payload)
-      ElMessage.success('配件主数据已更新')
+      ElMessage.success('配件管理项已更新')
     }
 
     showDialog.value = false
@@ -236,12 +366,12 @@ async function savePartType() {
 async function handleDelete(row) {
   try {
     await ElMessageBox.confirm(
-      `确认删除配件主数据「${row.category} / ${row.name}」吗？`,
-      '删除配件主数据',
+      `确认删除配件管理项「${row.category} / ${row.name}」吗？`,
+      '删除配件管理项',
       { type: 'warning' }
     )
     await deletePartType(row._id)
-    ElMessage.success('配件主数据已删除')
+    ElMessage.success('配件管理项已删除')
     await Promise.all([loadList(), loadCategoryCatalog()])
   } catch (error) {
     if (error !== 'cancel') {
