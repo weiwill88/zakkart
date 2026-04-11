@@ -302,20 +302,22 @@ function cancelBulkEdit() {
 async function saveBulkEdit() {
   bulkSaving.value = true
   try {
-    await bulkUpdatePartTypes(draftList.value.map(item => ({
-      id: item._id,
-      category: item.category,
-      name: item.name,
-      supplier_org_id: item.supplier_org_id,
-      unit: item.unit,
-      unit_price: item.unit_price,
-      price_note: item.price_note,
-      material: item.material,
-      color: item.color,
-      weight: item.weight,
-      size: item.size
-    })))
-    ElMessage.success('配件管理已批量更新')
+    const changedItems = draftList.value
+      .map(item => buildBulkUpdatePayload(item))
+      .filter(item => hasPartTypeChanged(item))
+
+    if (changedItems.length === 0) {
+      ElMessage.info('没有需要保存的变更')
+      bulkEditing.value = false
+      return
+    }
+
+    const chunkSize = 20
+    for (let i = 0; i < changedItems.length; i += chunkSize) {
+      await bulkUpdatePartTypes(changedItems.slice(i, i + chunkSize))
+    }
+
+    ElMessage.success(`配件管理已批量更新，共 ${changedItems.length} 项`)
     bulkEditing.value = false
     await Promise.all([loadList(), loadCategoryCatalog()])
   } catch (error) {
@@ -323,6 +325,42 @@ async function saveBulkEdit() {
   } finally {
     bulkSaving.value = false
   }
+}
+
+function buildBulkUpdatePayload(item) {
+  return {
+    id: item._id,
+    category: item.category,
+    name: item.name,
+    supplier_org_id: item.supplier_org_id,
+    unit: item.unit,
+    unit_price: item.unit_price,
+    price_note: item.price_note,
+    material: item.material,
+    color: item.color,
+    weight: item.weight,
+    size: item.size
+  }
+}
+
+function hasPartTypeChanged(nextItem) {
+  const currentItem = list.value.find(item => item._id === nextItem.id)
+  if (!currentItem) {
+    return true
+  }
+
+  const fields = ['category', 'name', 'supplier_org_id', 'unit', 'unit_price', 'price_note', 'material', 'color', 'weight', 'size']
+  return fields.some(field => normalizeComparableValue(currentItem[field]) !== normalizeComparableValue(nextItem[field]))
+}
+
+function normalizeComparableValue(value) {
+  if (value === null || value === undefined || value === '') {
+    return ''
+  }
+  if (typeof value === 'number') {
+    return String(value)
+  }
+  return String(value).trim()
 }
 
 async function savePartType() {
