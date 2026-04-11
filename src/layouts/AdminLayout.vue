@@ -11,6 +11,7 @@
 
       <nav class="sidebar-nav">
         <router-link
+          v-if="authStore.hasAdminPermission('module_dashboard')"
           to="/dashboard"
           class="nav-item nav-item--home"
           :class="{ active: isActive('/dashboard') }"
@@ -64,45 +65,51 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const menuGroups = [
+const menuGroups = computed(() => [
   {
     label: '基础资料',
     items: [
-      { path: '/products', label: '产品管理', icon: '📋' },
-      { path: '/part-types', label: '配件管理', icon: '🧩' },
-      { path: '/inventory', label: '库存管理', icon: '📊' },
-      { path: '/suppliers', label: '供应商管理', icon: '🏭' }
+      { path: '/products', label: '产品管理', icon: '📋', permissionKey: 'module_product' },
+      { path: '/part-types', label: '配件管理', icon: '🧩', permissionKey: 'module_part_type' },
+      { path: '/inventory', label: '库存管理', icon: '📊', permissionKey: 'module_inventory' },
+      { path: '/suppliers', label: '供应商管理', icon: '🏭', permissionKey: 'module_supplier' }
     ]
   },
   {
     label: '合同与计划',
     items: [
-      { path: '/orders', label: '订单生成', icon: '📝' },
-      { path: '/contracts', label: '合同管理', icon: '📄' }
+      { path: '/orders', label: '订单生成', icon: '📝', permissionKey: 'module_order' },
+      { path: '/contracts', label: '合同管理', icon: '📄', permissionKey: 'module_contract' }
     ]
   },
   {
     label: '生产与质检',
     items: [
-      { path: '/quality', label: '质检管理', icon: '🔎' }
+      { path: '/quality', label: '质检管理', icon: '🔎', permissionKey: 'module_quality' }
     ]
   },
   {
     label: '物流与发货',
     items: [
-      { path: '/shipments', label: '发货管理', icon: '🚚' },
-      { path: '/freight', label: '货代单据', icon: '📦' },
-      { path: '/freight-addresses', label: '货代地址维护', icon: '📍' }
+      { path: '/shipments', label: '发货管理', icon: '🚚', permissionKey: 'module_shipment' },
+      { path: '/freight', label: '货代单据', icon: '📦', permissionKey: 'module_freight' },
+      { path: '/freight-addresses', label: '货代地址维护', icon: '📍', permissionKey: 'module_freight' }
     ]
   },
   {
     label: '系统',
     items: [
-      { path: '/notifications', label: '通知中心', icon: '🔔' },
+      { path: '/notifications', label: '通知中心', icon: '🔔', permissionKey: 'module_notification' },
+      { path: '/admin-users', label: '甲方权限管理', icon: '🛡️', permissionKey: 'module_admin_user' },
       { path: '/settings', label: '系统设置', icon: '⚙️' }
     ]
   }
 ]
+  .map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.permissionKey || authStore.hasAdminPermission(item.permissionKey))
+  }))
+  .filter((group) => group.items.length > 0))
 
 const currentTitle = computed(() => route.meta.title || 'Zakkart')
 

@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { callApi } from '../services/api'
+import { ADMIN_PERMISSION_KEYS, normalizeGrantedAdminPermissions } from '../constants/adminPermissions'
 
 const TOKEN_KEY = 'zakkart.token'
 const USER_KEY = 'zakkart.user'
@@ -13,6 +14,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = computed(() => Boolean(token.value && user.value))
   const displayName = computed(() => user.value?.name || '未登录')
   const roleLabel = computed(() => user.value?.role_name || '访客')
+  const isAdminLike = computed(() => ['super_admin', 'admin', 'merchandiser'].includes(user.value?.role))
 
   async function bootstrap() {
     if (bootstrapped.value) {
@@ -66,6 +68,32 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem(USER_KEY, JSON.stringify(user.value))
   }
 
+  function hasAdminPermission(permissionKey) {
+    if (!permissionKey) {
+      return false
+    }
+
+    if (user.value?.role === 'super_admin') {
+      return true
+    }
+
+    if (!isAdminLike.value) {
+      return false
+    }
+
+    const permissions = Array.isArray(user.value?.permissions) ? user.value.permissions : []
+    const grantedKeys = normalizeGrantedAdminPermissions(permissions)
+    const hasConfiguredAdminModules = permissions.some((item) => {
+      const permissionKeyValue = typeof item === 'string' ? item : item?.permission_key
+      return ADMIN_PERMISSION_KEYS.includes(permissionKeyValue)
+    })
+    if (!hasConfiguredAdminModules) {
+      return true
+    }
+
+    return grantedKeys.has(permissionKey)
+  }
+
   return {
     token,
     user,
@@ -73,10 +101,12 @@ export const useAuthStore = defineStore('auth', () => {
     isLoggedIn,
     displayName,
     roleLabel,
+    isAdminLike,
     bootstrap,
     sendSmsCode,
     loginBySms,
-    logout
+    logout,
+    hasAdminPermission
   }
 })
 
