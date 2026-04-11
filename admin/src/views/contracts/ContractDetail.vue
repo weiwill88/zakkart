@@ -108,6 +108,7 @@
             </div>
             <span class="batch-actions">
               <el-button text size="small" @click="openEditBatch(batch)">编辑</el-button>
+              <el-button v-if="(batch.change_logs || []).length > 0" text size="small" @click="openBatchHistory(batch)">变更历史</el-button>
               <el-popconfirm title="确定删除该批次？" @confirm="handleDeleteBatch(batch._id)">
                 <template #reference>
                   <el-button text size="small" type="danger" :disabled="!isBatchDeletable(batch)">删除</el-button>
@@ -126,6 +127,9 @@
             </el-tag>
           </div>
           <div v-if="batch.note" class="batch-note">备注：{{ batch.note }}</div>
+          <div v-if="(batch.change_logs || []).length > 0" class="batch-change-log">
+            最近调整：{{ formatBatchChange(batch.change_logs[0]) }}
+          </div>
         </div>
       </div>
     </el-card>
@@ -158,6 +162,14 @@
         <el-form-item label="备注">
           <el-input v-model="batchForm.note" placeholder="选填" />
         </el-form-item>
+        <el-form-item v-if="batchEditId" label="调整原因" required>
+          <el-input
+            v-model="batchForm.change_reason"
+            type="textarea"
+            :rows="3"
+            placeholder="请写明本次日期/数量调整原因，该记录会进入交付计划变更历史"
+          />
+        </el-form-item>
         <el-form-item label="配件明细">
           <el-table :data="batchForm.parts" border size="small">
             <el-table-column prop="part_name" label="配件名称" />
@@ -174,6 +186,24 @@
         <el-button type="primary" :loading="batchSaving" @click="handleSaveBatch">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="showBatchHistoryDialog" title="交付计划变更历史" width="720px">
+      <el-empty v-if="batchHistoryRows.length === 0" description="暂无交付计划变更记录" />
+      <div v-else class="batch-history-list">
+        <div v-for="item in batchHistoryRows" :key="item.change_id || item.created_at" class="history-card">
+          <div class="history-head">
+            <strong>{{ item.reason || '未填写原因' }}</strong>
+            <span>{{ formatDate(item.created_at) }}</span>
+          </div>
+          <div class="history-operator">{{ item.operator_name || '甲方管理员' }}</div>
+          <ul class="history-detail-list">
+            <li v-for="(detail, index) in item.details || []" :key="`${item.change_id || item.created_at}-${index}`">
+              {{ detail }}
+            </li>
+          </ul>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -189,9 +219,11 @@ import { buildContractWord } from '../../utils/contractWord'
 import { buildContractUpdatePayload, createContractDraftFromDetail } from '../../utils/contractDocument'
 import { getContractStatusLabel, getContractStatusTagType, getGoodsStatusLabel, getGoodsStatusTagType, getSupplierConfirmStatusLabel, getSupplierConfirmStatusTagType } from '../../utils/status'
 import ContractDocumentEditor from '../../components/contracts/ContractDocumentEditor.vue'
+import { useAuthStore } from '../../stores/auth'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const contract = ref({})
 const batches = ref([])
@@ -207,7 +239,9 @@ const draftContract = ref(null)
 const showBatchDialog = ref(false)
 const batchEditId = ref(null)
 const batchSaving = ref(false)
-const batchForm = ref({ planned_date: '', note: '', parts: [] })
+const batchForm = ref({ planned_date: '', note: '', change_reason: '', parts: [] })
+const showBatchHistoryDialog = ref(false)
+const batchHistoryRows = ref([])
 
 function statusLabel(s) { return getContractStatusLabel(s) }
 function statusTagType(s) { return getContractStatusTagType(s) }
@@ -223,7 +257,8 @@ const canEdit = computed(() => ['DRAFT', 'PENDING_SIGN'].includes(contract.value
 const canExport = computed(() => ['DRAFT', 'PENDING_SIGN'].includes(contract.value.status))
 const canUploadSigned = computed(() => ['DRAFT', 'PENDING_SIGN'].includes(contract.value.status))
 const canPushConfirm = computed(() => ['DRAFT', 'PENDING_SIGN'].includes(contract.value.status) && contract.value.supplier_confirm_status !== 'CONFIRMED')
-const canAddBatch = computed(() => ['DRAFT', 'PENDING_SIGN', 'SIGNED', 'EXECUTING'].includes(contract.value.status))
+const canManageDeliveryPlan = computed(() => ['super_admin', 'admin'].includes(authStore.user?.role) && authStore.hasAdminPermission('module_contract'))
+const canAddBatch = computed(() => canManageDeliveryPlan.value && ['DRAFT', 'PENDING_SIGN', 'SIGNED', 'EXECUTING'].includes(contract.value.status))
 const contractPartRows = computed(() => getContractPartRows(contract.value))
 
 function isBatchDeletable(batch) {
@@ -376,22 +411,36 @@ async function handleViewSignedPdf() {
 // Batch operations
 function resetBatchForm() {
   batchEditId.value = null
-  batchForm.value = { planned_date: '', note: '', parts: [] }
+  batchForm.value = { planned_date: '', note: '', change_reason: '', parts: [] }
 }
 
 function openEditBatch(batch) {
+  if (!canManageDeliveryPlan.value) {
+    ElMessage.warning('只有甲方管理员可以调整交付计划')
+    return
+  }
   batchEditId.value = batch._id
   batchForm.value = {
     planned_date: batch.planned_date,
     note: batch.note || '',
+    change_reason: '',
     parts: (batch.parts || []).map(p => ({ ...p }))
   }
   showBatchDialog.value = true
 }
 
+function openBatchHistory(batch) {
+  batchHistoryRows.value = Array.isArray(batch.change_logs) ? batch.change_logs : []
+  showBatchHistoryDialog.value = true
+}
+
 async function handleSaveBatch() {
   if (!batchForm.value.planned_date) {
     ElMessage.warning('请选择交付日期')
+    return
+  }
+  if (batchEditId.value && !String(batchForm.value.change_reason || '').trim()) {
+    ElMessage.warning('请填写本次交付计划调整原因')
     return
   }
 
@@ -402,6 +451,7 @@ async function handleSaveBatch() {
       await updateBatch(batchEditId.value, {
         planned_date: batchForm.value.planned_date,
         note: batchForm.value.note,
+        change_reason: batchForm.value.change_reason,
         parts: batchForm.value.parts
       })
       ElMessage.success('批次已更新')
@@ -450,6 +500,11 @@ function initNewBatchParts() {
     part_name: item.part_name,
     planned_qty: 0
   }))
+}
+
+function formatBatchChange(changeLog = {}) {
+  const detailText = Array.isArray(changeLog.details) ? changeLog.details.join('；') : ''
+  return `${changeLog.reason || '未填写原因'}${detailText ? `（${detailText}）` : ''} · ${formatDate(changeLog.created_at)}`
 }
 
 function getContractPartRows(contractData = {}) {
@@ -560,9 +615,38 @@ onMounted(() => {
   font-size: 13px;
   color: var(--el-text-color-secondary);
 }
+.batch-change-log {
+  margin-top: 8px;
+  color: var(--el-color-primary);
+  font-size: 12px;
+}
 .empty-hint {
   padding: 20px;
   color: var(--el-text-color-secondary);
   text-align: center;
+}
+.batch-history-list {
+  display: grid;
+  gap: 12px;
+}
+.history-card {
+  padding: 14px 16px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 10px;
+}
+.history-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.history-operator {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.history-detail-list {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--el-text-color-primary);
 }
 </style>

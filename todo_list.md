@@ -244,8 +244,16 @@
 - 甲方小程序库存页已去 mock：
   - `pages/inventory/overview` 改为读取真实 `inventory.list`
   - 当前为只读查看，不含调整能力
+- 交付计划调整一期已补齐：
+  - 甲方管理员可在 PC 端调整结构化交付批次日期与数量
+  - 调整原因必填
+  - 每个批次保留 `change_logs` 历史
+- 库存调整一期已补强：
+  - 库存调整原因改为必填
+  - PC 端可按库存项查看专属调整历史
 - 本轮未新增数据库集合：
   - 继续复用现有 `users / inventory / inventory_change_logs / inspection_records`
+  - 交付计划历史直接写入 `delivery_batches.change_logs`
 - 下一阶段再单独设计：
   - 交付计划变更审批流
   - 库存调整双向确认审批流

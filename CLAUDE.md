@@ -175,6 +175,8 @@
 - [x] PC 端库存管理一期已上线：仅面向组装厂，支持配件/成品库存录入与库存流水查看
 - [x] 甲方小程序库存页已切到真实接口，去除旧 mock 库存展示
 - [x] 权限边界已补强：`inspection.*`、`status.markProduced`、`inventory.*`、`adminUser.*` 已接入模块权限校验
+- [x] 交付计划调整一期已补齐：仅甲方管理员可调整结构化批次日期/数量，且必须填写调整原因并保留批次历史
+- [x] 库存调整一期已补强：库存调整原因后端强制必填，PC 端支持按库存项查看调整历史
 
 **进行中：**
 - [x] 阶段 2 云端部署与联调
@@ -240,6 +242,8 @@
 - 库存管理一期：`cloudfunctions/api/routes/inventory.js`、`admin/src/views/inventory/InventoryView.vue` 已支持组装厂库存录入；`miniprogram/pages/inventory/overview/*` 改为真实只读数据
 - 甲方移动验货：`miniprogram/pages/quality/detail/*` 已支持现场提交验货结果，`pages/quality/list/*` / `pages/home/admin/*` 已补甲方入口
 - 权限校验补强：`cloudfunctions/api/utils/access.js`、`routes/status.js`、`routes/inspection.js`、`miniprogram/app.js` 已修正模块权限与老账号兼容逻辑
+- 交付计划调整补强：`cloudfunctions/api/routes/batch.js` 已新增管理员限制与 `change_logs` 记录；`admin/src/views/contracts/ContractDetail.vue` 已支持填写调整原因并查看历史
+- 库存调整补强：`inventory.history` 已新增；`admin/src/views/inventory/InventoryView.vue` 已支持“历史”弹窗和原因必填
 
 ### 联调结论（2026-04-06）
 
@@ -266,7 +270,7 @@
 - 生产与验货模块已从首页剥离：供应商进入“生产验货”页后可直接看到待标记已生产任务与验货状态
 - 供应商导航第二轮收口已完成：合同交付 / 生产验货 / 发货物流 / 我的组织已改为页面内统一模块导航；负责人默认全量可见，成员按权限裁剪
 - 供应商导航第三轮收口已完成：模块导航从页面顶部改为底部固定栏；统一为 首页 / 合同交付 / 生产验货 / 发货物流 / 我的，“我的组织”收回“我的”内页
-- 当前无需新增数据库集合；本轮继续复用 `users / inventory / inventory_change_logs / inspection_records`
+- 当前无需新增数据库集合；本轮继续复用 `users / inventory / inventory_change_logs / inspection_records / delivery_batches`
 
 ---
 

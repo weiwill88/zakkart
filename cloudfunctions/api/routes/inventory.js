@@ -75,6 +75,28 @@ async function list({ params = {}, auth }) {
   }
 }
 
+async function history({ params = {}, auth }) {
+  await ensureAdminPermission(auth, PERMISSION_KEY)
+
+  const { inventoryId = '' } = params
+  if (!inventoryId) {
+    const error = new Error('缺少 inventoryId')
+    error.code = 400
+    throw error
+  }
+
+  const records = await getAllDocuments(
+    getCollection(INVENTORY_LOG_COLLECTION)
+      .where({ inventory_id: inventoryId })
+      .orderBy('created_at', 'desc'),
+    200
+  )
+
+  return {
+    list: records
+  }
+}
+
 async function upsert({ params = {}, auth }) {
   await ensureAdminPermission(auth, PERMISSION_KEY)
 
@@ -92,6 +114,12 @@ async function upsert({ params = {}, auth }) {
 
   if (!orgId || !itemType) {
     const error = new Error('缺少必填字段：orgId、itemType')
+    error.code = 400
+    throw error
+  }
+
+  if (!String(reason || '').trim()) {
+    const error = new Error('请填写本次库存调整原因')
     error.code = 400
     throw error
   }
@@ -315,5 +343,6 @@ async function getAllDocuments(query, pageSize = 100) {
 
 module.exports = {
   'inventory.list': list,
+  'inventory.history': history,
   'inventory.upsert': upsert
 }

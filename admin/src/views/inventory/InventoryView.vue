@@ -65,9 +65,10 @@
         <el-table-column label="更新时间" width="170">
           <template #default="{ row }">{{ formatDateTime(row.updated_at) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center">
+        <el-table-column label="操作" width="160" align="center">
           <template #default="{ row }">
             <el-button text type="primary" @click="openEditDialog(row)">编辑</el-button>
+            <el-button text @click="openHistoryDialog(row)">历史</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -125,8 +126,8 @@
         <el-form-item label="成品">
           <el-input-number v-model="form.finishedQty" :min="0" :step="10" style="width: 180px" />
         </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.reason" type="textarea" :rows="3" placeholder="说明这次初始化/调整的原因" />
+        <el-form-item label="调整原因" required>
+          <el-input v-model="form.reason" type="textarea" :rows="3" placeholder="请写明这次初始化/调整的原因，该记录会进入库存历史" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -134,13 +135,29 @@
         <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="showHistoryDialog" title="库存调整历史" width="760px">
+      <el-empty v-if="historyLoading === false && historyRows.length === 0" description="暂无库存调整记录" />
+      <el-table v-else :data="historyRows" border size="small" v-loading="historyLoading">
+        <el-table-column label="时间" width="170">
+          <template #default="{ row }">{{ formatDateTime(row.created_at) }}</template>
+        </el-table-column>
+        <el-table-column label="字段" width="100">
+          <template #default="{ row }">{{ stockFieldLabel(row.stock_field) }}</template>
+        </el-table-column>
+        <el-table-column label="变更量" width="100" align="right">
+          <template #default="{ row }">{{ signedNumber(row.change_qty) }}</template>
+        </el-table-column>
+        <el-table-column prop="reason" label="原因" min-width="260" />
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { fetchInventoryOverview, upsertInventoryItem } from '../../services/inventory'
+import { fetchInventoryHistory, fetchInventoryOverview, upsertInventoryItem } from '../../services/inventory'
 import { fetchOrgList } from '../../services/organization'
 import { fetchPartTypeList } from '../../services/partType'
 import { fetchProductList } from '../../services/product'
@@ -155,6 +172,9 @@ const partOptions = ref([])
 const products = ref([])
 const showDialog = ref(false)
 const editingRow = ref(null)
+const showHistoryDialog = ref(false)
+const historyLoading = ref(false)
+const historyRows = ref([])
 const filters = ref({
   orgId: '',
   itemType: '',
@@ -242,6 +262,10 @@ async function handleSave() {
     ElMessage.warning('请选择 SKU')
     return
   }
+  if (!String(form.value.reason || '').trim()) {
+    ElMessage.warning('请填写本次库存调整原因')
+    return
+  }
 
   saving.value = true
   try {
@@ -253,6 +277,20 @@ async function handleSave() {
     ElMessage.error(error.message || '保存库存失败')
   } finally {
     saving.value = false
+  }
+}
+
+async function openHistoryDialog(row) {
+  showHistoryDialog.value = true
+  historyLoading.value = true
+  historyRows.value = []
+  try {
+    const result = await fetchInventoryHistory(row._id)
+    historyRows.value = result.list || []
+  } catch (error) {
+    ElMessage.error(error.message || '加载库存历史失败')
+  } finally {
+    historyLoading.value = false
   }
 }
 

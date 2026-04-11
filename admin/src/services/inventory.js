@@ -10,6 +10,10 @@ export async function fetchInventoryOverview(params = {}) {
   return callApi('inventory.list', params, { token: getToken() })
 }
 
+export async function fetchInventoryHistory(inventoryId) {
+  return callApi('inventory.history', { inventoryId }, { token: getToken() })
+}
+
 export async function upsertInventoryItem(data) {
   return callApi('inventory.upsert', data, { token: getToken() })
 }
