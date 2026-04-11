@@ -1,0 +1,56 @@
+<!--pages/shipping/create/index.wxml - 供应商填报发货-->
+<view class="page-container">
+  <view class="card">
+    <text class="form-title">填报发货信息</text>
+    <text class="form-subtitle">从已验货待发货的配件中选择本次装车明细</text>
+  </view>
+
+  <view class="card">
+    <view class="form-group">
+      <text class="form-label">发货地址</text>
+      <picker range="{{fromAddresses}}" range-key="label" bindchange="onFromChange">
+        <view class="form-readonly">{{fromAddresses.length ? fromAddresses[selectedFromIndex].label : '请选择发货地址'}}</view>
+      </picker>
+    </view>
+    <view class="form-group">
+      <text class="form-label">目的地</text>
+      <picker range="{{toAddresses}}" range-key="label" bindchange="onToChange">
+        <view class="form-readonly">{{toAddresses.length ? toAddresses[selectedToIndex].label : '请选择目的地地址'}}</view>
+      </picker>
+      <text class="form-hint" style="margin-top: 8rpx">{{destinationRuleText}}</text>
+    </view>
+  </view>
+
+  <view class="section-header"><text class="section-title">本次装车明细</text></view>
+  <view wx:for="{{candidates}}" wx:key="id" class="card candidate-card">
+    <view class="flex-between">
+      <view>
+        <text class="candidate-name">{{item.name}}</text>
+        <text class="form-hint">{{item.contractNo}} · {{item.batchNo}}</text>
+      </view>
+      <switch checked="{{item.selected}}" bindchange="onToggleSelect" data-index="{{index}}" color="#1A56DB" />
+    </view>
+
+    <view wx:if="{{item.selected}}">
+      <view class="form-group">
+        <text class="form-hint">计划/验货通过数量：{{item.plannedQty}} 件</text>
+        <input class="form-input" type="number" value="{{item.actualQty}}" bindinput="onQtyInput" data-index="{{index}}" placeholder="请输入实际发货数量" />
+      </view>
+      <view wx:if="{{item.actualQty !== item.plannedQty}}" class="form-group">
+        <text class="form-label">数量调整原因</text>
+        <textarea class="form-textarea" value="{{item.qtyModifyReason}}" bindinput="onReasonInput" data-index="{{index}}" placeholder="如：补货 20 件 / 次品未补齐少发 5 件" />
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{candidates.length === 0}}" class="card">
+    <text>当前没有待发货明细，请先完成验货。</text>
+  </view>
+  <view wx:if="{{fromAddresses.length === 0 || toAddresses.length === 0}}" class="card">
+    <text>当前缺少可用地址，请先由甲方在后台维护供应商发货地址和目标地址。</text>
+  </view>
+
+  <view class="bottom-action-bar">
+    <button class="btn btn-primary btn-block btn-lg" bindtap="onSubmit" loading="{{submitting}}">创建发货单</button>
+  </view>
+</view>

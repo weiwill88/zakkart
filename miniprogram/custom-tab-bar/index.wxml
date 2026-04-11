@@ -1,0 +1,21 @@
+<view wx:if="{{tabs.length > 0}}" class="tab-bar">
+  <view
+    wx:for="{{tabs}}"
+    wx:key="key"
+    class="tab-bar-item {{currentTab === item.key ? 'active' : ''}}"
+    data-path="{{item.pagePath}}"
+    data-key="{{item.key}}"
+    bindtap="onTabTap"
+  >
+    <view class="tab-icon">
+      <text wx:if="{{item.key === 'home'}}">🏠</text>
+      <text wx:elif="{{item.key === 'contract'}}">📋</text>
+      <text wx:elif="{{item.key === 'production'}}">🏭</text>
+      <text wx:elif="{{item.key === 'inventory'}}">📦</text>
+      <text wx:elif="{{item.key === 'shipping'}}">🚚</text>
+      <text wx:elif="{{item.key === 'packing'}}">🔧</text>
+      <text wx:elif="{{item.key === 'settings'}}">👤</text>
+    </view>
+    <text class="tab-label">{{item.label}}</text>
+  </view>
+</view>

@@ -1,0 +1,25 @@
+<!--pages/notification/list/index.wxml - 通知列表-->
+<view class="page-container">
+  <view wx:for="{{notifications}}" wx:key="id" class="card notif-item {{item.read ? 'read' : 'unread'}}" bindtap="onNotificationTap" data-item="{{item}}">
+    <view class="notif-header">
+      <view class="notif-type-icon">
+        <text wx:if="{{item.type === 'contract_created' || item.type === 'contract_exported' || item.type === 'contract_signed' || item.type === 'batch_updated'}}">📄</text>
+        <text wx:elif="{{item.type === 'production_completed' || item.type === 'inspection_completed'}}">🔍</text>
+        <text wx:elif="{{item.type === 'shipment_needs_confirm' || item.type === 'driver_accepted' || item.type === 'shipment_in_transit' || item.type === 'shipment_arrived'}}">🚚</text>
+        <text wx:elif="{{item.type === 'freight_doc_uploaded' || item.type === 'freight_arrived'}}">📦</text>
+        <text wx:else>🔔</text>
+      </view>
+      <view class="notif-content">
+        <view class="flex-between">
+          <text class="notif-title">{{item.title}}</text>
+          <text class="notif-time">{{item.time}}</text>
+        </view>
+        <text class="notif-text">{{item.content}}</text>
+      </view>
+    </view>
+    <view wx:if="{{!item.read}}" class="unread-dot"></view>
+  </view>
+  <view wx:if="{{notifications.length === 0}}" class="empty-state">
+    <text class="empty-icon">🔔</text><text class="empty-text">暂无通知</text>
+  </view>
+</view>

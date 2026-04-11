@@ -1,0 +1,36 @@
+<!--pages/product/detail/index.wxml - 产品详情 + BOM-->
+<view class="page-container">
+  <view class="card">
+    <text style="font-size: 36rpx; font-weight: 700; display: block">{{product.name}}</text>
+    <text style="font-size: 26rpx; color: #6B7280; display: block; margin-top: 4rpx">{{product.code}} · {{product.nameEn}}</text>
+    <view style="display: flex; gap: 12rpx; margin-top: 16rpx">
+      <text style="font-size: 24rpx; padding: 4rpx 16rpx; background: #DBEAFE; color: #1A56DB; border-radius: 999rpx">{{product.category}}</text>
+      <text style="font-size: 24rpx; padding: 4rpx 16rpx; background: #D1FAE5; color: #059669; border-radius: 999rpx">ASIN: {{product.asin}}</text>
+    </view>
+  </view>
+
+  <view class="section-header"><text class="section-title">SKU 变体列表</text></view>
+  <view class="card" style="padding: 0 !important">
+    <view wx:for="{{product.skus}}" wx:key="id" class="list-item">
+      <view class="list-item-content">
+        <text class="list-item-title">{{item.code}}</text>
+        <text class="list-item-desc">{{item.spec}}</text>
+      </view>
+      <text style="font-size: 28rpx; font-weight: 600; color: {{item.stock < 200 ? '#DC2626' : '#059669'}}">{{item.stock}}</text>
+      <text style="font-size: 22rpx; color: #9CA3AF; margin-left: 4rpx">件</text>
+    </view>
+  </view>
+
+  <view class="section-header"><text class="section-title">BOM 配件构成</text></view>
+  <view wx:for="{{product.bom}}" wx:key="partId" class="card" style="padding: 24rpx 32rpx !important">
+    <view class="flex-between" style="margin-bottom: 8rpx">
+      <text style="font-size: 28rpx; font-weight: 600">{{item.name}}</text>
+      <text style="font-size: 24rpx; color: #6B7280">×{{item.qty}}</text>
+    </view>
+    <text style="font-size: 24rpx; color: #1A56DB; display: block">供应商：{{item.supplier}}</text>
+    <view style="display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx">
+      <text wx:for="{{item.variants}}" wx:for-item="v" wx:key="*this" style="font-size: 22rpx; padding: 2rpx 12rpx; background: #F3F4F6; border-radius: 999rpx; color: #6B7280">{{v}}</text>
+    </view>
+    <text wx:if="{{item.note}}" style="font-size: 22rpx; color: #9CA3AF; display: block; margin-top: 6rpx">备注：{{item.note}}</text>
+  </view>
+</view>

@@ -1,0 +1,14 @@
+.contract-card { padding: 28rpx 32rpx !important; }
+.contract-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20rpx; }
+.contract-no { font-size: var(--font-size-base); font-weight: 600; display: block; }
+.contract-product { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; margin-top: 4rpx; }
+.contract-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12rpx; margin-bottom: 20rpx; padding-bottom: 20rpx; border-bottom: 1rpx solid var(--color-border-light); }
+.meta-item { display: flex; flex-direction: column; }
+.meta-label { font-size: var(--font-size-xs); color: var(--color-text-placeholder); }
+.meta-value { font-size: var(--font-size-sm); color: var(--color-text-primary); font-weight: 500; margin-top: 2rpx; }
+.contract-progress { margin-bottom: 16rpx; }
+.batch-tags { display: flex; flex-wrap: wrap; gap: 8rpx; }
+.batch-tag { padding: 4rpx 16rpx; border-radius: var(--radius-full); font-size: 20rpx; }
+.batch-tag.pending { background: var(--status-pending-bg); color: var(--status-pending); }
+.batch-tag.in-progress { background: var(--status-in-progress-bg); color: var(--status-in-progress); }
+.batch-tag.completed { background: var(--status-completed-bg); color: var(--status-completed); }

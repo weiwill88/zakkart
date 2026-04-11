@@ -103,7 +103,7 @@
 
 ## 当前开发状态
 
-### 阶段：阶段 4 发货与物流开发中（2026-04-11）
+### 阶段：阶段 4 联调中 + 权限/库存一期补齐（2026-04-11）
 
 **已完成：**
 - [x] PRD 定稿（v0.4）
@@ -170,6 +170,11 @@
 - [x] 小程序原型模式已下线：移除角色切换入口、原型 fallback 与 `role-select` 页面，正式环境仅保留手机号验证码登录
 - [x] 合同签署上传后已支持按合同内结构化交付计划自动生成真实批次，供应商侧可直接进入“待生产”
 - [x] 合同交付日期录入已统一改为日期选择器，保存格式固定为 `YYYY-MM-DD`
+- [x] 甲方权限基础已补齐一版：PC 端新增 `甲方权限管理`，支持按模块给甲方成员/第三方质检人员授权
+- [x] 甲方小程序质检提交流程已补齐：管理员可在移动端直接提交验货结果，并上传现场图片/视频
+- [x] PC 端库存管理一期已上线：仅面向组装厂，支持配件/成品库存录入与库存流水查看
+- [x] 甲方小程序库存页已切到真实接口，去除旧 mock 库存展示
+- [x] 权限边界已补强：`inspection.*`、`status.markProduced`、`inventory.*`、`adminUser.*` 已接入模块权限校验
 
 **进行中：**
 - [x] 阶段 2 云端部署与联调
@@ -187,6 +192,7 @@
 - 用最新代码重新部署 `api` 云函数并做阶段 4 联调
 - 逐项验证阶段 4 闭环：创建发货单 → 数量确认 → 司机两步扫码 → 收货/到货代确认
 - 阶段 4 最新代码已补正式 `notification.*` 读写与货代确认到达收口，下一步以云端联调为主
+- 交付计划变更审批、库存调整双向确认、发货差异自动顺延仍未实现，作为下一阶段单独设计与开发
 
 ### 今日代码落点（2026-04-11）
 
@@ -230,6 +236,10 @@
 - 部署文件：`deploy-packages/api-cloudfunction.zip` 需随最新代码重新打包上传
 - 合同展示第二轮收口：PC 合同详情已移除重复的“合同明细”表格；小程序合同详情不再额外展示重复的批次摘要，合同页只保留合同确认、合同原文与已签 PDF 查阅
 - 合同数量显示修正：小程序合同列表、供应商首页、管理员首页、合同详情已优先读取 `product_items.total_qty`，避免旧 `contract.items` 缺失时出现总量为空或 0
+- 甲方权限基础：`cloudfunctions/api/routes/adminUser.js`、`admin/src/views/system/AdminUserList.vue`、`admin/src/constants/adminPermissions.js` 已支持甲方成员模块授权
+- 库存管理一期：`cloudfunctions/api/routes/inventory.js`、`admin/src/views/inventory/InventoryView.vue` 已支持组装厂库存录入；`miniprogram/pages/inventory/overview/*` 改为真实只读数据
+- 甲方移动验货：`miniprogram/pages/quality/detail/*` 已支持现场提交验货结果，`pages/quality/list/*` / `pages/home/admin/*` 已补甲方入口
+- 权限校验补强：`cloudfunctions/api/utils/access.js`、`routes/status.js`、`routes/inspection.js`、`miniprogram/app.js` 已修正模块权限与老账号兼容逻辑
 
 ### 联调结论（2026-04-06）
 
@@ -256,6 +266,7 @@
 - 生产与验货模块已从首页剥离：供应商进入“生产验货”页后可直接看到待标记已生产任务与验货状态
 - 供应商导航第二轮收口已完成：合同交付 / 生产验货 / 发货物流 / 我的组织已改为页面内统一模块导航；负责人默认全量可见，成员按权限裁剪
 - 供应商导航第三轮收口已完成：模块导航从页面顶部改为底部固定栏；统一为 首页 / 合同交付 / 生产验货 / 发货物流 / 我的，“我的组织”收回“我的”内页
+- 当前无需新增数据库集合；本轮继续复用 `users / inventory / inventory_change_logs / inspection_records`
 
 ---
 

@@ -1,0 +1,67 @@
+<!--pages/contract/list/index.wxml - 合同列表-->
+<view class="page-container">
+  <!-- 筛选标签 -->
+  <view class="tabs">
+    <view class="tab-item {{activeTab === 'all' ? 'active' : ''}}" bindtap="switchTab" data-tab="all">全部</view>
+    <view wx:if="{{isSupplier}}" class="tab-item {{activeTab === 'pending_confirm' ? 'active' : ''}}" bindtap="switchTab" data-tab="pending_confirm">待确认</view>
+    <view class="tab-item {{activeTab === 'in_progress' ? 'active' : ''}}" bindtap="switchTab" data-tab="in_progress">执行中</view>
+    <view class="tab-item {{activeTab === 'completed' ? 'active' : ''}}" bindtap="switchTab" data-tab="completed">已完成</view>
+  </view>
+
+  <!-- 合同卡片列表 -->
+  <view wx:for="{{filteredContracts}}" wx:key="id" class="card contract-card" bindtap="goToDetail" data-id="{{item.id}}">
+    <view class="contract-header">
+      <view class="contract-info">
+        <text class="contract-no">{{item.contractNo}}</text>
+        <text class="contract-product">{{item.productName}}</text>
+      </view>
+      <view class="badge {{item.statusClass}}">{{item.statusText}}</view>
+    </view>
+    <view wx:if="{{isSupplier}}" style="margin-bottom: 12rpx">
+      <view class="badge {{item.supplierConfirmClass}}">{{item.supplierConfirmText}}</view>
+    </view>
+
+    <view class="contract-meta">
+      <view class="meta-item">
+        <text class="meta-label">供应商</text>
+        <text class="meta-value">{{item.supplierName}}</text>
+      </view>
+      <view class="meta-item">
+        <text class="meta-label">合同总量</text>
+        <text class="meta-value">{{item.totalQtyStr}}</text>
+      </view>
+      <view class="meta-item">
+        <text class="meta-label">签订日期</text>
+        <text class="meta-value">{{item.signDate}}</text>
+      </view>
+    </view>
+
+    <view class="contract-progress">
+      <view class="progress-info">
+        <text class="progress-text">交付进度</text>
+        <text class="progress-percent">{{item.progress}}%</text>
+      </view>
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{item.progress}}%"></view>
+      </view>
+    </view>
+
+    <view class="batch-tags">
+      <view wx:for="{{item.batches}}" wx:for-item="batch" wx:key="id" class="batch-tag {{batch.statusType}}">
+        {{batch.batchNo}} · {{batch.statusLabel}}
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{filteredContracts.length === 0}}" class="empty-state">
+    <text class="empty-icon">📋</text>
+    <text class="empty-text">{{activeTab === 'pending_confirm' ? '暂无待确认合同' : '暂无合同数据'}}</text>
+  </view>
+
+  <!-- 管理员：新建合同按钮 -->
+  <view wx:if="{{isAdmin}}" class="bottom-action-bar">
+    <button class="btn btn-primary btn-block btn-lg" bindtap="goToCreate">+ 新建合同</button>
+  </view>
+
+  <supplier-module-nav currentKey="contract" />
+</view>

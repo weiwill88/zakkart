@@ -1,0 +1,15 @@
+<view wx:if="{{items.length > 0}}" class="module-nav">
+  <view class="module-nav__row">
+    <view
+      wx:for="{{items}}"
+      wx:key="key"
+      class="module-nav__item {{item.active ? 'module-nav__item--active' : ''}}"
+      bindtap="onNavigate"
+      data-path="{{item.path}}"
+      data-key="{{item.key}}"
+    >
+      <text class="module-nav__icon">{{item.icon}}</text>
+      <text class="module-nav__label">{{item.label}}</text>
+    </view>
+  </view>
+</view>

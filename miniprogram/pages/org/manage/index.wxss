@@ -1,0 +1,13 @@
+.org-title { font-size: 34rpx; font-weight: 700; display: block; }
+.org-subtitle { font-size: 24rpx; color: #6B7280; display: block; margin: 8rpx 0 16rpx; }
+.readonly-notice { background: #fff7ed; color: #9a3412; }
+.member-card { padding: 28rpx 32rpx !important; }
+.member-name { font-size: 30rpx; font-weight: 600; display: block; }
+.member-phone { font-size: 24rpx; color: #6B7280; display: block; margin-top: 4rpx; }
+.member-permission { font-size: 24rpx; color: #475569; display: block; margin-top: 12rpx; }
+.member-actions { display: flex; gap: 16rpx; margin-top: 16rpx; }
+.mask { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.42); display: flex; align-items: flex-end; padding: 24rpx; z-index: 20; }
+.dialog-card { width: 100%; background: #fff; border-radius: 24rpx; padding: 32rpx; max-height: 85vh; overflow: auto; }
+.dialog-title { font-size: 32rpx; font-weight: 700; display: block; margin-bottom: 24rpx; }
+.dialog-actions { display: flex; gap: 16rpx; margin-top: 24rpx; }
+.radio-row, .checkbox-row, .switch-row { display: flex; align-items: center; justify-content: space-between; padding: 12rpx 0; font-size: 28rpx; }

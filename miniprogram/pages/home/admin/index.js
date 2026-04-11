@@ -5,6 +5,8 @@ Page({
   data: {
     user: {},
     greeting: '',
+    moduleAccess: {},
+    moduleCards: [],
     stats: {},
     todoItems: [],
     supplierProgress: [],
@@ -28,6 +30,7 @@ Page({
     const app = getApp()
     const user = app.getUser()
     const greeting = getGreeting()
+    const moduleAccess = app.getAdminModuleAccess()
 
     try {
       const [contractResult, inspectionResult] = await Promise.all([
@@ -89,6 +92,8 @@ Page({
       this.setData({
         user,
         greeting,
+        moduleAccess,
+        moduleCards: buildModuleCards(moduleAccess),
         stats: {
           activeContracts: executingContracts.length,
           pendingShipments: 0,
@@ -109,6 +114,28 @@ Page({
   goToShipments() { wx.navigateTo({ url: '/pages/shipping/list/index' }) },
   goToInventory() { wx.switchTab({ url: '/pages/inventory/overview/index' }) },
   goToNotifications() { wx.navigateTo({ url: '/pages/notification/list/index' }) },
+  onOpenModule(e) {
+    const key = e.currentTarget.dataset.key
+    if (key === 'quality') {
+      wx.navigateTo({ url: '/pages/quality/list/index' })
+      return
+    }
+    if (key === 'contract') {
+      wx.switchTab({ url: '/pages/contract/list/index' })
+      return
+    }
+    if (key === 'inventory') {
+      wx.switchTab({ url: '/pages/inventory/overview/index' })
+      return
+    }
+    if (key === 'shipping') {
+      wx.navigateTo({ url: '/pages/shipping/list/index' })
+      return
+    }
+    if (key === 'notification') {
+      wx.navigateTo({ url: '/pages/notification/list/index' })
+    }
+  },
   goToContractDetail(e) { wx.navigateTo({ url: `/pages/contract/detail/index?id=${e.currentTarget.dataset.id}` }) },
   onTodoTap(e) {
     const item = e.currentTarget.dataset.item
@@ -189,4 +216,24 @@ function getContractTotalQty(contract) {
   }
 
   return (contract.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
+}
+
+function buildModuleCards(moduleAccess) {
+  const cards = []
+  if (moduleAccess.contract) {
+    cards.push({ key: 'contract', title: '合同管理', desc: '查看合同与签署状态', icon: '📄' })
+  }
+  if (moduleAccess.quality) {
+    cards.push({ key: 'quality', title: '质检管理', desc: '现场提交验货结果', icon: '🔍' })
+  }
+  if (moduleAccess.inventory) {
+    cards.push({ key: 'inventory', title: '库存查看', desc: '查看组装厂库存信息', icon: '📦' })
+  }
+  if (moduleAccess.shipping) {
+    cards.push({ key: 'shipping', title: '物流发货', desc: '跟踪运单与货代', icon: '🚚' })
+  }
+  if (moduleAccess.notification) {
+    cards.push({ key: 'notification', title: '通知中心', desc: '查看业务提醒', icon: '🔔' })
+  }
+  return cards
 }

@@ -1,0 +1,23 @@
+.quick-card { padding: 28rpx 32rpx !important; }
+.quick-card--receiving { background: #eff6ff; }
+.ship-card { padding: 28rpx 32rpx !important; }
+.ship-part { font-size: var(--font-size-lg); font-weight: 600; }
+.ship-supplier { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; margin-top: 4rpx; }
+.ship-batch { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; margin-top: 2rpx; }
+.ship-route { display: flex; align-items: center; margin-top: 16rpx; padding: 16rpx; background: var(--color-bg-page); border-radius: var(--radius-md); }
+.route-from, .route-to { flex: 1; font-size: var(--font-size-sm); }
+.route-to { text-align: right; }
+.route-arrow { padding: 0 16rpx; color: var(--color-primary); font-weight: bold; font-size: 32rpx; }
+.confirm-steps { display: flex; align-items: center; margin-top: 20rpx; padding: 16rpx 0; }
+.step { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.step-dot { width: 44rpx; height: 44rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22rpx; font-weight: 600; background: #E5E7EB; color: #9CA3AF; }
+.step.done .step-dot { background: #059669; color: #fff; }
+.step.error .step-dot { background: #DC2626; color: #fff; }
+.step-label { font-size: 20rpx; color: var(--color-text-placeholder); margin-top: 6rpx; }
+.step.done .step-label { color: #059669; }
+.step.error .step-label { color: #DC2626; }
+.step-line { height: 4rpx; flex: 0.5; background: #E5E7EB; }
+.step-line.done { background: #059669; }
+.dispute-bar { display: flex; align-items: flex-start; margin-top: 16rpx; padding: 16rpx; background: #FEF2F2; border-radius: var(--radius-md); }
+.dispute-icon { margin-right: 8rpx; font-size: 28rpx; }
+.dispute-text { font-size: var(--font-size-sm); color: #DC2626; flex: 1; }

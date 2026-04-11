@@ -1,0 +1,7 @@
+.form-title { font-size: var(--font-size-xl); font-weight: 700; display: block; }
+.form-subtitle { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; margin-top: 4rpx; }
+.candidate-name { font-size: var(--font-size-lg); font-weight: 600; display: block; margin-bottom: 8rpx; }
+.upload-area { display: flex; flex-direction: column; align-items: center; padding: 48rpx; border: 2rpx dashed #D1D5DB; border-radius: var(--radius-lg); background: var(--color-bg-page); }
+.upload-icon { font-size: 56rpx; margin-bottom: 12rpx; }
+.upload-text { font-size: var(--font-size-base); color: var(--color-text-secondary); }
+.upload-hint { font-size: var(--font-size-xs); color: var(--color-text-placeholder); margin-top: 4rpx; }

@@ -1,0 +1,135 @@
+<!--pages/quality/confirm/index.wxml - 管理员验货确认（核心操作页）-->
+<view class="page-container">
+  <view class="card">
+    <view class="flex-between" style="margin-bottom: 16rpx">
+      <text style="font-size: 36rpx; font-weight: 700">验货确认</text>
+      <view class="badge badge-pending">待确认</view>
+    </view>
+    <view class="info-row"><text class="info-label">配件名称</text><text class="info-value">{{qc.partName}}</text></view>
+    <view class="info-row"><text class="info-label">供应商</text><text class="info-value">{{qc.supplierName}}</text></view>
+    <view class="info-row"><text class="info-label">批次</text><text class="info-value">{{qc.batchNo}} · {{qc.totalQty}} 件</text></view>
+    <view class="info-row"><text class="info-label">验货日期</text><text class="info-value">{{qc.inspectDate}}</text></view>
+  </view>
+
+  <!-- 验货结论选择 -->
+  <view class="section-header"><text class="section-title">验货结论</text></view>
+  <view class="card">
+    <view class="verdict-options">
+      <view class="verdict-option {{verdict === 'pass' ? 'selected pass' : ''}}" bindtap="setVerdict" data-v="pass">
+        <text class="verdict-icon">✅</text>
+        <text class="verdict-label">全部通过</text>
+        <text class="verdict-desc">全部合格，可安排发货</text>
+      </view>
+      <view class="verdict-option {{verdict === 'partial' ? 'selected partial' : ''}}" bindtap="setVerdict" data-v="partial">
+        <text class="verdict-icon">⚠️</text>
+        <text class="verdict-label">部分通过</text>
+        <text class="verdict-desc">有次品，合格品可先行发货</text>
+      </view>
+      <view class="verdict-option {{verdict === 'reject' ? 'selected reject' : ''}}" bindtap="setVerdict" data-v="reject">
+        <text class="verdict-icon">❌</text>
+        <text class="verdict-label">不通过</text>
+        <text class="verdict-desc">质量严重不达标，需返工</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 部分通过 / 不通过时：录入次品数据 -->
+  <block wx:if="{{verdict === 'partial' || verdict === 'reject'}}">
+    <view class="section-header"><text class="section-title">🔴 缺陷记录</text></view>
+    <view class="card">
+      <view class="form-group">
+        <text class="form-label form-label-required">合格品数量</text>
+        <input class="form-input" type="number" placeholder="输入合格件数" value="{{passedQty}}" bindinput="onPassedChange" />
+      </view>
+      <view class="form-group">
+        <text class="form-label form-label-required">次品数量</text>
+        <view class="defect-auto">
+          <text class="defect-qty">{{defectQty}}</text>
+          <text class="defect-note">件（自动计算：总量 {{qc.totalQty}} - 合格 {{passedQty}}）</text>
+        </view>
+      </view>
+
+      <!-- 缺陷类型分类 -->
+      <view class="form-group">
+        <text class="form-label form-label-required">缺陷分类</text>
+        <view class="defect-types">
+          <view wx:for="{{defectTypes}}" wx:key="key" class="defect-type-item {{item.checked ? 'checked' : ''}}" bindtap="toggleDefectType" data-key="{{item.key}}">
+            <text class="defect-type-icon">{{item.icon}}</text>
+            <text class="defect-type-name">{{item.name}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 典型缺陷描述 -->
+      <view class="form-group">
+        <text class="form-label form-label-required">缺陷详细说明</text>
+        <textarea class="form-textarea" placeholder="描述具体的缺陷情况，如：&#10;• 2件实木配件有裂纹&#10;• 5件颜色偏差&#10;• 螺丝孔位偏移3mm" value="{{defectDescription}}" bindinput="onDefectDescInput" />
+      </view>
+
+      <!-- 上传缺陷照片/视频 -->
+      <view class="form-group">
+        <text class="form-label">缺陷照片/视频</text>
+        <view class="upload-grid">
+          <view class="upload-item" wx:for="{{3}}" wx:key="*this" bindtap="onUpload">
+            <text class="upload-icon">📷</text>
+            <text class="upload-text">点击上传</text>
+          </view>
+        </view>
+        <text style="font-size: 22rpx; color: #9CA3AF; display: block; margin-top: 8rpx">正式版支持拍照/视频上传，Photo+Video可作为供应商扣款依据</text>
+      </view>
+    </view>
+
+    <!-- 次品处理方案 -->
+    <view class="section-header"><text class="section-title">次品处理方案</text></view>
+    <view class="card">
+      <view class="handle-options">
+        <view class="handle-option {{defectHandling === 'rework' ? 'selected' : ''}}" bindtap="setHandling" data-h="rework">
+          <text class="handle-icon">🔧</text>
+          <text class="handle-name">返工修复</text>
+          <text class="handle-desc">次品退回供应商，要求返工后重新验货</text>
+        </view>
+        <view class="handle-option {{defectHandling === 'discount' ? 'selected' : ''}}" bindtap="setHandling" data-h="discount">
+          <text class="handle-icon">💰</text>
+          <text class="handle-name">降价接收</text>
+          <text class="handle-desc">按协商价格接收次品，后续结算扣减</text>
+        </view>
+        <view class="handle-option {{defectHandling === 'destroy' ? 'selected' : ''}}" bindtap="setHandling" data-h="destroy">
+          <text class="handle-icon">🗑️</text>
+          <text class="handle-name">报废处理</text>
+          <text class="handle-desc">次品不可修复，报废并由供应商承担</text>
+        </view>
+        <view class="handle-option {{defectHandling === 'supplement' ? 'selected' : ''}}" bindtap="setHandling" data-h="supplement">
+          <text class="handle-icon">📦</text>
+          <text class="handle-name">补货</text>
+          <text class="handle-desc">供应商重新生产次品数量的配件</text>
+        </view>
+      </view>
+      <view wx:if="{{defectHandling}}" class="form-group" style="margin-top: 20rpx">
+        <text class="form-label">处理备注</text>
+        <textarea class="form-textarea" placeholder="补充说明处理方案细节…" />
+      </view>
+    </view>
+
+    <!-- 部分通过时：合格品可先行发货 -->
+    <block wx:if="{{verdict === 'partial'}}">
+      <view class="section-header"><text class="section-title">合格品处理</text></view>
+      <view class="card">
+        <view class="pass-action">
+          <text class="pass-text">✅ 合格品 <text style="font-weight: 700; color: #059669">{{passedQty}} 件</text> 可先行安排发货</text>
+          <text class="pass-note">确认后系统将通知供应商针对合格品部分填报发货。次品按上述方案另行处理。</text>
+        </view>
+      </view>
+    </block>
+  </block>
+
+  <!-- 验货备注 -->
+  <view class="section-header"><text class="section-title">验货报告备注</text></view>
+  <view class="card">
+    <textarea class="form-textarea" placeholder="整体验货情况说明…" value="{{reportNote}}" />
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="bottom-action-bar">
+    <button class="btn {{verdictBtnClass}} btn-block btn-lg" bindtap="onSubmit">{{verdictBtnText}}</button>
+  </view>
+</view>

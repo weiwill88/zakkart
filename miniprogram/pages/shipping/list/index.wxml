@@ -1,0 +1,62 @@
+<!--pages/shipping/list/index.wxml - 运单列表-->
+<view class="page-container">
+  <view wx:if="{{canCreate}}" class="card quick-card">
+    <view class="flex-between">
+      <view>
+        <text class="ship-part">待发货 {{readyShipmentCount}} 项</text>
+        <text class="ship-supplier">验货通过后可在这里创建发货单</text>
+      </view>
+      <button class="btn btn-primary btn-sm" bindtap="goCreate">创建发货单</button>
+    </view>
+  </view>
+
+  <view wx:if="{{pendingReceivingCount > 0}}" class="card quick-card quick-card--receiving">
+    <text class="ship-part">待收货 {{pendingReceivingCount}} 单</text>
+    <text class="ship-supplier">到货后请进入运单详情确认实际收货数量</text>
+  </view>
+
+  <view class="tabs">
+    <view class="tab-item {{activeTab === 'all' ? 'active' : ''}}" bindtap="switchTab" data-tab="all">全部</view>
+    <view class="tab-item {{activeTab === 'pending' ? 'active' : ''}}" bindtap="switchTab" data-tab="pending">待确认</view>
+    <view class="tab-item {{activeTab === 'transit' ? 'active' : ''}}" bindtap="switchTab" data-tab="transit">在途</view>
+    <view class="tab-item {{activeTab === 'receiving' ? 'active' : ''}}" bindtap="switchTab" data-tab="receiving">待收货</view>
+    <view class="tab-item {{activeTab === 'arrived' ? 'active' : ''}}" bindtap="switchTab" data-tab="arrived">已完成</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="card">
+    <text>加载中...</text>
+  </view>
+
+  <view wx:for="{{filteredList}}" wx:key="id" class="card ship-card" bindtap="goToDetail" data-id="{{item.id}}">
+    <view class="flex-between">
+      <view>
+        <text class="ship-part">{{item.shipmentNo}}</text>
+        <text class="ship-supplier">{{item.itemNames || '发货明细'}}</text>
+      </view>
+      <view class="badge {{item.statusClass}}">{{item.statusLabel}}</view>
+    </view>
+
+    <view class="ship-route">
+      <text class="route-from">{{item.fromAddressLabel}}</text>
+      <text class="route-arrow">→</text>
+      <text class="route-to">{{item.toAddressLabel}}</text>
+    </view>
+
+    <view class="flex-between" style="margin-top: 16rpx">
+      <text class="ship-supplier">实际发货：{{item.actualTotalQty}} 件</text>
+      <text class="ship-supplier">计划：{{item.plannedTotalQty}} 件</text>
+    </view>
+
+    <view wx:if="{{item.needConfirm}}" class="dispute-bar">
+      <text class="dispute-icon">!</text>
+      <text class="dispute-text">发货数量已修改，待甲方在线确认后司机才能扫码提货。</text>
+    </view>
+  </view>
+
+  <view wx:if="{{!loading && filteredList.length === 0}}" class="empty-state">
+    <text class="empty-icon">🚚</text>
+    <text class="empty-text">当前没有符合条件的发货单</text>
+  </view>
+
+  <supplier-module-nav currentKey="shipping" />
+</view>

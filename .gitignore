@@ -1,24 +1,29 @@
-# Logs
-logs
+# 环境变量（含密钥，绝不提交）
+.env
+.env.*
+
+# 本地版本管理备份
+.git-backups/
+admin/.git.local-backup-*/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+dist-ssr/
+
+# 编辑器
+.vscode/
+.idea/
+*.sw?
+miniprogram/project.private.config.json
+.claude/
+
+# 日志
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?

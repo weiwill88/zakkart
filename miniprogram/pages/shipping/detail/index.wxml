@@ -1,0 +1,73 @@
+<!--pages/shipping/detail/index.wxml - 运单详情-->
+<view class="page-container">
+  <view class="card">
+    <view class="flex-between" style="margin-bottom: 16rpx">
+      <text style="font-size: 32rpx; font-weight: 700">{{ship.shipmentNo || '运单详情'}}</text>
+      <view class="badge {{ship.badgeClass}}">{{ship.statusLabel}}</view>
+    </view>
+    <view class="info-row"><text class="info-label">发货方</text><text class="info-value">{{ship.shipperName}}</text></view>
+    <view class="info-row"><text class="info-label">发货地址</text><text class="info-value">{{ship.fromAddressLabel}}</text></view>
+    <view class="info-row"><text class="info-label">目的地</text><text class="info-value">{{ship.toAddressLabel}}</text></view>
+    <view wx:if="{{ship.needConfirm}}" class="dispute-bar">
+      <text class="dispute-icon">!</text>
+      <text class="dispute-text">本单存在数量调整，待甲方确认后司机才能扫码接单。</text>
+    </view>
+  </view>
+
+  <view class="section-header"><text class="section-title">发货明细</text></view>
+  <view class="card">
+    <view class="variant-table">
+      <view class="variant-header">
+        <text class="variant-col name">货品</text>
+        <text class="variant-col qty">计划</text>
+        <text class="variant-col qty">发货</text>
+        <text class="variant-col qty">收货</text>
+      </view>
+      <view wx:for="{{ship.items}}" wx:key="id" class="variant-row">
+        <text class="variant-col name">{{item.name}}</text>
+        <text class="variant-col qty">{{item.plannedQty}}</text>
+        <text class="variant-col qty">{{item.actualQty}}</text>
+        <text class="variant-col qty">{{item.actualReceivedQty !== null ? item.actualReceivedQty : '--'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section-header"><text class="section-title">司机与收货信息</text></view>
+  <view class="card">
+    <view wx:if="{{ship.driver}}">
+      <view class="info-row"><text class="info-label">司机姓名</text><text class="info-value">{{ship.driver.driver_name}}</text></view>
+      <view class="info-row"><text class="info-label">车牌号</text><text class="info-value">{{ship.driver.plate_number}}</text></view>
+      <view class="info-row"><text class="info-label">联系电话</text><text class="info-value">{{ship.driver.driver_phone || '--'}}</text></view>
+      <view class="info-row"><text class="info-label">首次扫码</text><text class="info-value">{{ship.driver.step1_at || '--'}}</text></view>
+      <view class="info-row"><text class="info-label">接单 GPS</text><text class="info-value">{{ship.driver.step1GpsText || '--'}}</text></view>
+      <view class="info-row"><text class="info-label">确认提货</text><text class="info-value">{{ship.driver.step2_at || '--'}}</text></view>
+      <view class="info-row"><text class="info-label">提货 GPS</text><text class="info-value">{{ship.driver.step2GpsText || '--'}}</text></view>
+      <view wx:if="{{ship.driver.signatureTempUrl || ship.driver.loadingPhotoTempUrl}}" style="margin-top: 20rpx">
+        <view class="section-title" style="font-size: 26rpx; margin-bottom: 16rpx">司机凭证</view>
+        <view class="driver-media-grid">
+          <view wx:if="{{ship.driver.signatureTempUrl}}" class="driver-media-card">
+            <text class="driver-media-label">手写签名</text>
+            <image class="driver-media-image" mode="aspectFill" src="{{ship.driver.signatureTempUrl}}" bindtap="onPreviewDriverImage" data-current="{{ship.driver.signatureTempUrl}}" />
+          </view>
+          <view wx:if="{{ship.driver.loadingPhotoTempUrl}}" class="driver-media-card">
+            <text class="driver-media-label">装车照片</text>
+            <image class="driver-media-image" mode="aspectFill" src="{{ship.driver.loadingPhotoTempUrl}}" bindtap="onPreviewDriverImage" data-current="{{ship.driver.loadingPhotoTempUrl}}" />
+          </view>
+        </view>
+      </view>
+    </view>
+    <text wx:else class="timeline-desc">司机尚未扫码接单</text>
+    <text wx:if="{{ship.driver && !ship.driver.signatureTempUrl && !ship.driver.loadingPhotoTempUrl}}" class="timeline-desc" style="margin-top: 12rpx">司机已登记，但尚未上传提货凭证。</text>
+
+    <view wx:if="{{ship.freightDocument}}" style="margin-top: 24rpx">
+      <button class="btn btn-outline btn-block" bindtap="onViewFreightDoc">查看货代入库指示单</button>
+    </view>
+    <view wx:if="{{canCopyDriverLink}}" style="margin-top: 24rpx">
+      <button class="btn btn-outline btn-block" bindtap="onCopyDriverLink">复制司机扫码链接</button>
+    </view>
+  </view>
+
+  <view wx:if="{{canConfirmArrival}}" class="bottom-action-bar">
+    <button class="btn btn-primary btn-block btn-lg" bindtap="onGoConfirmArrival">确认收货 / 到达</button>
+  </view>
+</view>

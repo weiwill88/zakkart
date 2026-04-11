@@ -1,0 +1,4 @@
+.welcome-section { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 0 24rpx; }
+.welcome-greeting { font-size: var(--font-size-xl); font-weight: 700; color: #D97706; display: block; }
+.welcome-name { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; margin-top: 4rpx; }
+.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16rpx; margin-bottom: 8rpx; }

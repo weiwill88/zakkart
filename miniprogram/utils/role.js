@@ -12,6 +12,7 @@ const roleTabConfigs = {
   admin: [
     { key: 'home', label: '工作台', icon: 'home', pagePath: '/pages/home/admin/index' },
     { key: 'contract', label: '合同', icon: 'contract', pagePath: '/pages/contract/list/index' },
+    { key: 'production', label: '质检', icon: 'production', pagePath: '/pages/quality/list/index' },
     { key: 'inventory', label: '库存', icon: 'inventory', pagePath: '/pages/inventory/overview/index' },
     { key: 'settings', label: '我的', icon: 'user', pagePath: '/pages/settings/index' }
   ],

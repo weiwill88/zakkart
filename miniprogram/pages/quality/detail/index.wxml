@@ -1,0 +1,107 @@
+<view class="page-container">
+  <view class="card">
+    <view class="flex-between" style="margin-bottom: 20rpx">
+      <view class="badge {{qc.badgeClass}}">{{qc.statusLabel}}</view>
+      <text style="font-size: 24rpx; color: #9CA3AF">{{qc.inspectDate || '待安排'}}</text>
+    </view>
+    <view class="info-row"><text class="info-label">配件名称</text><text class="info-value">{{qc.partName}}</text></view>
+    <view class="info-row"><text class="info-label">供应商</text><text class="info-value">{{qc.supplierName}}</text></view>
+    <view class="info-row"><text class="info-label">合同号</text><text class="info-value">{{qc.contractNo}}</text></view>
+    <view class="info-row"><text class="info-label">批次</text><text class="info-value">{{qc.batchNo}}</text></view>
+    <view class="info-row"><text class="info-label">计划数量</text><text class="info-value">{{qc.plannedQty}} 件</text></view>
+    <view class="info-row"><text class="info-label">待验货数量</text><text class="info-value">{{qc.totalQty}} 件</text></view>
+  </view>
+
+  <block wx:if="{{isAdmin && canInspect && qc.status === 'PENDING_INSPECTION'}}">
+    <view class="section-header"><text class="section-title">提交验货结果</text></view>
+    <view class="card">
+      <radio-group bindchange="onResultChange">
+        <label class="radio-row">
+          <radio value="PASS" checked="{{form.result === 'PASS'}}" color="#059669" />
+          <text>全部通过</text>
+        </label>
+        <label class="radio-row">
+          <radio value="PARTIAL_PASS" checked="{{form.result === 'PARTIAL_PASS'}}" color="#D97706" />
+          <text>部分通过</text>
+        </label>
+        <label class="radio-row">
+          <radio value="FAIL" checked="{{form.result === 'FAIL'}}" color="#DC2626" />
+          <text>不通过</text>
+        </label>
+      </radio-group>
+
+      <view class="form-grid">
+        <view class="form-group">
+          <text class="form-label">合格数量</text>
+          <input class="form-input" type="number" value="{{form.qualifiedQty}}" bindinput="onQualifiedQtyChange" />
+        </view>
+        <view class="form-group">
+          <text class="form-label">次品数量</text>
+          <input class="form-input" type="number" value="{{form.defectQty}}" bindinput="onDefectQtyChange" />
+        </view>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">次品说明</text>
+        <textarea class="form-textarea" value="{{form.defectDesc}}" bindinput="onDefectDescInput" placeholder="记录次品原因、位置和处理意见" />
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">现场备注</text>
+        <textarea class="form-textarea" value="{{form.note}}" bindinput="onNoteInput" placeholder="填写现场反馈、补充说明等" />
+      </view>
+
+      <view class="form-group">
+        <view class="flex-between" style="margin-bottom: 12rpx">
+          <text class="form-label">现场图片 / 视频</text>
+          <button class="btn btn-outline btn-sm" bindtap="onChooseMedia">选择附件</button>
+        </view>
+        <view wx:if="{{localMediaFiles.length > 0}}" class="photo-grid">
+          <view wx:for="{{localMediaFiles}}" wx:key="id" class="local-media-item">
+            <image wx:if="{{item.mediaType === 'image'}}" class="media-thumb" src="{{item.tempFilePath}}" mode="aspectFill" bindtap="onPreviewLocalImage" data-url="{{item.tempFilePath}}" />
+            <video wx:else class="media-thumb" src="{{item.tempFilePath}}" controls objectFit="cover" />
+            <button class="remove-media-btn" catchtap="onRemoveLocalMedia" data-id="{{item.id}}">删除</button>
+          </view>
+        </view>
+        <text wx:else class="empty-media-text">当前未选择现场附件</text>
+      </view>
+
+      <button class="btn btn-primary btn-block" loading="{{submitting}}" bindtap="onSubmitInspection">提交验货结果</button>
+    </view>
+  </block>
+
+  <block wx:if="{{qc.passedQty > 0 || qc.defectQty > 0}}">
+    <view class="section-header"><text class="section-title">质检结果</text></view>
+    <view class="card">
+      <view class="qc-result-row">
+        <view class="result-block pass"><text class="result-num">{{qc.passedQty}}</text><text class="result-label">合格品</text></view>
+        <view class="result-block fail"><text class="result-num">{{qc.defectQty}}</text><text class="result-label">次品</text></view>
+      </view>
+      <view class="info-row" style="margin-top: 20rpx"><text class="info-label">次品详情</text><text class="info-value" style="color: #DC2626">{{qc.defectDetails}}</text></view>
+    </view>
+
+    <view class="section-header"><text class="section-title">质检备注</text></view>
+    <view class="card">
+      <text class="report-text">{{qc.report}}</text>
+    </view>
+
+    <view class="section-header"><text class="section-title">质检照片 / 视频</text></view>
+    <view class="card">
+      <view class="photo-grid">
+        <block wx:for="{{mediaItems}}" wx:key="id">
+          <image wx:if="{{item.mediaType === 'image'}}" class="media-thumb" src="{{item.url}}" mode="aspectFill" bindtap="onPreviewImage" data-url="{{item.url}}" />
+          <video wx:else class="media-thumb" src="{{item.url}}" controls objectFit="cover" />
+        </block>
+      </view>
+      <text wx:if="{{mediaItems.length === 0}}" class="empty-media-text">当前没有上传现场图片或视频</text>
+    </view>
+  </block>
+
+  <block wx:if="{{qc.status === 'PENDING_INSPECTION' && (!isAdmin || !canInspect)}}">
+    <view class="card" style="text-align: center; padding: 60rpx 32rpx !important">
+      <text style="font-size: 64rpx; display: block; margin-bottom: 16rpx">🔍</text>
+      <text style="font-size: 28rpx; color: #6B7280; display: block">当前处于待验货状态</text>
+      <text style="font-size: 24rpx; color: #9CA3AF; display: block; margin-top: 8rpx">当前账号仅可查看状态，需由有质检权限的甲方人员提交现场结果。</text>
+    </view>
+  </block>
+</view>

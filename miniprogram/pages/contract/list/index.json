@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "合同管理",
+  "usingComponents": {
+    "supplier-module-nav": "/components/supplier-module-nav/index"
+  }
+}

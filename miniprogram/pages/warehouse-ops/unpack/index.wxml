@@ -1,0 +1,29 @@
+<!--pages/warehouse-ops/unpack/index.wxml - 拆包记录-->
+<view class="page-container">
+  <view class="card">
+    <text style="font-size: 36rpx; font-weight: 700; display: block">📂 拆包记录</text>
+    <text style="font-size: 26rpx; color: #6B7280; display: block; margin-top: 4rpx">成品拆回配件：成品库存减少，配件库存增加</text>
+  </view>
+  <view class="card">
+    <view class="form-group">
+      <text class="form-label form-label-required">选择成品 SKU</text>
+      <picker range="{{['03M-深灰（窗台搁板款）','03M-浅灰（窗台搁板款）','03L-浅灰（窗台搁板款）']}}" bindchange="onSkuChange">
+        <view style="display: flex; justify-content: space-between; padding: 20rpx 24rpx; border: 2rpx solid #E5E7EB; border-radius: 12rpx">
+          <text>{{selectedSku || '请选择'}}</text><text style="color: #9CA3AF">▾</text>
+        </view>
+      </picker>
+    </view>
+    <view class="form-group">
+      <text class="form-label form-label-required">拆包数量</text>
+      <input class="form-input" type="number" placeholder="输入拆包件数" />
+    </view>
+    <view class="form-group">
+      <text class="form-label">拆包原因</text>
+      <textarea class="form-textarea" placeholder="说明拆包原因…"></textarea>
+    </view>
+    <view style="padding: 16rpx; background: #FEF3C7; border-radius: 12rpx; margin-bottom: 20rpx">
+      <text style="font-size: 24rpx; color: #92400E">⚠️ 拆包后成品库存将减少，对应配件库存将增加</text>
+    </view>
+    <button class="btn btn-warning btn-block btn-lg" bindtap="onSubmit">提交拆包记录</button>
+  </view>
+</view>

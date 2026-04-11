@@ -1,0 +1,48 @@
+<!--pages/warehouse-ops/outbound/index.wxml - 出库管理-->
+<view class="page-container">
+  <view class="card">
+    <text class="page-title">🚛 出库管理</text>
+    <text class="page-desc">成品从组装仓发往海运仓（通过货代），管理员复核确认</text>
+  </view>
+
+  <!-- 新建出库 -->
+  <view class="section-header"><text class="section-title">新建出库单</text></view>
+  <view class="card">
+    <view class="form-group">
+      <text class="form-label form-label-required">选择成品 SKU</text>
+      <picker range="{{skuOptions}}" range-key="label" bindchange="onSkuChange">
+        <view class="form-picker"><text>{{selectedSku || '请选择'}}</text><text class="picker-arrow">▾</text></view>
+      </picker>
+    </view>
+    <view wx:if="{{currentStock >= 0 && selectedSku}}" class="stock-hint">
+      <text>当前库存：<text style="font-weight: 700; color: {{currentStock > 0 ? '#059669' : '#DC2626'}}">{{currentStock}} 件</text></text>
+    </view>
+    <view class="form-group">
+      <text class="form-label form-label-required">出库数量</text>
+      <input class="form-input" type="number" placeholder="输入出库数量" />
+    </view>
+    <view class="form-group">
+      <text class="form-label form-label-required">目的地</text>
+      <input class="form-input" placeholder="如：货代仓（发往FBA）" value="货代仓（发往FBA）" />
+    </view>
+    <button class="btn btn-primary btn-block btn-lg" style="margin-top: 16rpx" bindtap="onSubmit">提交出库单（待管理员确认）</button>
+  </view>
+
+  <!-- 出库记录 -->
+  <view class="section-header"><text class="section-title">出库记录</text></view>
+  <view wx:for="{{records}}" wx:key="id" class="card record-card">
+    <view class="flex-between" style="margin-bottom: 8rpx">
+      <text class="record-sku">{{item.productName}} · {{item.skuCode}}</text>
+      <view class="badge {{item.status === 'confirmed' ? 'badge-completed' : 'badge-pending'}}">{{item.status === 'confirmed' ? '已确认' : '待确认'}}</view>
+    </view>
+    <view class="info-row"><text class="info-label">数量</text><text class="info-value">{{item.qty}} 件</text></view>
+    <view class="info-row"><text class="info-label">目的地</text><text class="info-value">{{item.destination}}</text></view>
+    <view class="info-row"><text class="info-label">出库日期</text><text class="info-value">{{item.date}}</text></view>
+    <view wx:if="{{item.status === 'confirmed'}}" class="info-row">
+      <text class="info-label">确认人</text><text class="info-value">{{item.confirmedBy}} · {{item.confirmedAt}}</text>
+    </view>
+    <view wx:if="{{isAdmin && item.status === 'pending_confirm'}}" style="margin-top: 16rpx">
+      <button class="btn btn-success btn-block btn-sm" catchtap="onConfirmOutbound" data-id="{{item.id}}">管理员确认</button>
+    </view>
+  </view>
+</view>

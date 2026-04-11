@@ -1,0 +1,14 @@
+.warehouse-filter { display: flex; gap: 12rpx; margin-bottom: 16rpx; overflow-x: auto; }
+.filter-item { padding: 8rpx 24rpx; border-radius: var(--radius-full); font-size: var(--font-size-sm); color: var(--color-text-secondary); background: var(--color-bg-card); white-space: nowrap; }
+.filter-item.active { background: var(--color-primary); color: #fff; }
+.inv-card { padding: 24rpx 32rpx !important; }
+.empty-card { text-align: center; color: var(--color-text-secondary); }
+.inv-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16rpx; }
+.inv-sku { font-size: var(--font-size-base); font-weight: 600; display: block; }
+.inv-product { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; margin-top: 4rpx; }
+.inv-detail { display: block; }
+.stock-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16rpx; }
+.stock-item { padding: 16rpx; border-radius: var(--radius-md); background: var(--color-bg-page); text-align: center; }
+.inv-qty { font-size: 48rpx; font-weight: 700; color: var(--color-primary); line-height: 1; display: block; }
+.stock-sub { font-size: 36rpx; font-weight: 700; color: var(--color-text-primary); line-height: 1; display: block; }
+.inv-unit { font-size: var(--font-size-sm); color: var(--color-text-secondary); }

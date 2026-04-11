@@ -1,0 +1,31 @@
+<view class="page-container">
+  <view wx:if="{{supplier}}" class="card">
+    <text style="font-size: 34rpx; font-weight: 700; display: block">{{supplier.name}}</text>
+    <text style="font-size: 24rpx; color: #6B7280; display: block; margin-top: 8rpx">
+      {{supplier.hasAssembly ? '具备组装能力' : '普通供应商'}}
+    </text>
+  </view>
+
+  <view wx:if="{{supplier}}" class="card">
+    <view class="info-row"><text class="info-label">统一社会信用代码</text><text class="info-value">{{supplier.creditCode}}</text></view>
+    <view class="info-row"><text class="info-label">法人</text><text class="info-value">{{supplier.legalPerson}}</text></view>
+    <view class="info-row"><text class="info-label">联系电话</text><text class="info-value">{{supplier.phone}}</text></view>
+    <view class="info-row"><text class="info-label">注册地址</text><text class="info-value">{{supplier.address}}</text></view>
+  </view>
+
+  <view wx:if="{{supplier}}" class="card">
+    <view class="info-row"><text class="info-label">开户银行</text><text class="info-value">{{supplier.bankName}}</text></view>
+    <view class="info-row"><text class="info-label">银行账号</text><text class="info-value">{{supplier.bankAccount}}</text></view>
+    <view class="info-row"><text class="info-label">开户行全称</text><text class="info-value">{{supplier.bankBranch}}</text></view>
+  </view>
+
+  <view wx:if="{{supplier}}" class="card">
+    <text class="section-title">合作说明</text>
+    <text style="font-size: 24rpx; color: #6B7280; display: block; margin-top: 12rpx">{{supplier.cooperationNote}}</text>
+  </view>
+
+  <view wx:if="{{!supplier}}" class="empty-state">
+    <text class="empty-icon">🏭</text>
+    <text class="empty-text">暂无供应商数据</text>
+  </view>
+</view>

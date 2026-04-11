@@ -1,0 +1,56 @@
+<!--pages/warehouse-ops/packing/index.wxml - 包装记录-->
+<view class="page-container">
+  <view class="card">
+    <text class="page-title">📦 包装记录</text>
+    <text class="page-desc">录入成品包装数量，系统将按 BOM 自动扣减配件库存</text>
+  </view>
+
+  <!-- 录入表单 -->
+  <view class="section-header"><text class="section-title">新增包装记录</text></view>
+  <view class="card">
+    <view class="form-group">
+      <text class="form-label form-label-required">选择成品 SKU</text>
+      <picker bindchange="onSkuChange" range="{{skuOptions}}" range-key="label">
+        <view class="form-picker">
+          <text>{{selectedSku || '请选择成品 SKU'}}</text>
+          <text class="picker-arrow">▾</text>
+        </view>
+      </picker>
+    </view>
+    <view class="form-group">
+      <text class="form-label form-label-required">包装数量</text>
+      <input class="form-input" type="number" placeholder="输入本次包装数量" value="{{packQty}}" bindinput="onQtyInput" />
+    </view>
+
+    <view wx:if="{{selectedSku}}" class="bom-preview">
+      <text class="bom-title">BOM 配件消耗预览</text>
+      <view class="bom-item" wx:for="{{bomItems}}" wx:key="name">
+        <text class="bom-name">{{item.name}}</text>
+        <text class="bom-consume">将消耗 {{item.consumeQty}} {{item.unit}}</text>
+        <text class="bom-stock {{item.stockEnough ? '' : 'insufficient'}}">库存 {{item.currentStock}}</text>
+      </view>
+    </view>
+
+    <view class="form-group" style="margin-top: 24rpx">
+      <text class="form-label">损耗记录（可选）</text>
+      <input class="form-input" type="number" placeholder="如有包装损耗，输入损耗数量" />
+      <textarea class="form-textarea" style="margin-top: 12rpx" placeholder="损耗原因说明（如：2件实木配件有裂纹）"></textarea>
+    </view>
+
+    <button class="btn btn-primary btn-block btn-lg" style="margin-top: 24rpx" bindtap="onSubmitPacking">提交包装记录</button>
+  </view>
+
+  <!-- 包装历史 -->
+  <view class="section-header"><text class="section-title">最近包装记录</text></view>
+  <view wx:for="{{records}}" wx:key="id" class="card record-item">
+    <view class="flex-between">
+      <text class="record-sku">{{item.productName}} · {{item.skuCode}}</text>
+      <text class="record-date">{{item.date}}</text>
+    </view>
+    <view class="record-detail">
+      <text>包装 <text class="record-qty">{{item.qty}}</text> 件</text>
+      <text wx:if="{{item.loss}}" class="record-loss">损耗 {{item.loss}} 件 · {{item.lossNote}}</text>
+    </view>
+    <text class="record-operator">操作人：{{item.operator}}</text>
+  </view>
+</view>

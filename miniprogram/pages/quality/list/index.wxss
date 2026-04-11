@@ -1,0 +1,17 @@
+.production-card { padding: 28rpx 32rpx !important; }
+.qc-card { padding: 28rpx 32rpx !important; }
+.qc-date { font-size: var(--font-size-xs); color: var(--color-text-placeholder); }
+.qc-part { font-size: var(--font-size-lg); font-weight: 600; display: block; }
+.qc-supplier { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; margin-top: 4rpx; }
+.qc-batch { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; margin-top: 2rpx; }
+.qc-result { display: flex; gap: 16rpx; margin-top: 20rpx; padding-top: 20rpx; border-top: 1rpx solid var(--color-border-light); }
+.result-item { flex: 1; text-align: center; padding: 12rpx; border-radius: var(--radius-md); }
+.result-item.pass { background: var(--status-completed-bg); }
+.result-item.fail { background: var(--status-abnormal-bg); }
+.result-item.rate { background: var(--status-in-progress-bg); }
+.result-num { font-size: var(--font-size-xl); font-weight: 700; display: block; }
+.result-item.pass .result-num { color: var(--status-completed); }
+.result-item.fail .result-num { color: var(--status-abnormal); }
+.result-item.rate .result-num { color: var(--status-in-progress); }
+.result-label { font-size: var(--font-size-xs); color: var(--color-text-secondary); display: block; margin-top: 4rpx; }
+.qc-actions { margin-top: 20rpx; display: flex; gap: 12rpx; justify-content: flex-end; }

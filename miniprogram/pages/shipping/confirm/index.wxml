@@ -1,0 +1,32 @@
+<!--pages/shipping/confirm/index.wxml-->
+<view class="page-container">
+  <view class="card">
+    <text class="form-title">{{shipment.shipmentNo || '确认收货'}}</text>
+    <text class="form-subtitle">目的地：{{shipment.toAddressLabel || '--'}}</text>
+  </view>
+
+  <view wx:for="{{items}}" wx:key="itemId" class="card">
+    <text class="candidate-name">{{item.itemName}}</text>
+    <text class="form-hint">发货数量：{{item.plannedQty}} 件</text>
+    <view class="form-group">
+      <text class="form-label">实际收货数量</text>
+      <input class="form-input" type="number" value="{{item.actualReceivedQty}}" bindinput="onQtyInput" data-index="{{index}}" />
+    </view>
+    <view class="form-group">
+      <text class="form-label">异常备注</text>
+      <textarea class="form-textarea" value="{{item.exceptionNote}}" bindinput="onNoteInput" data-index="{{index}}" placeholder="如少货、破损、外包装异常等" />
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="upload-area" bindtap="onChoosePhoto">
+      <text class="upload-icon">📷</text>
+      <text class="upload-text">上传卸货照片</text>
+      <text class="upload-hint">当前已选择 {{photoList.length}} 张</text>
+    </view>
+  </view>
+
+  <view class="bottom-action-bar">
+    <button class="btn btn-primary btn-block btn-lg" bindtap="onSubmit" loading="{{submitting}}">确认收货</button>
+  </view>
+</view>

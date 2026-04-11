@@ -1,0 +1,12 @@
+.form-title { font-size: var(--font-size-xl); font-weight: 700; display: block; }
+.form-subtitle { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; margin-top: 4rpx; }
+.form-readonly { padding: 16rpx 24rpx; background: var(--color-bg-page); border-radius: var(--radius-md); font-size: var(--font-size-base); color: var(--color-text-primary); }
+.form-hint { font-size: var(--font-size-xs); color: var(--color-text-placeholder); display: block; margin-bottom: 8rpx; }
+.candidate-card { padding: 28rpx 32rpx !important; }
+.candidate-name { font-size: var(--font-size-lg); font-weight: 600; }
+.qty-summary { display: flex; justify-content: flex-end; align-items: center; padding-top: 20rpx; border-top: 1rpx solid var(--color-border-light); font-size: var(--font-size-base); }
+.qty-total { font-size: var(--font-size-xl); font-weight: 700; color: var(--color-primary); margin-left: 8rpx; }
+.upload-area { display: flex; flex-direction: column; align-items: center; padding: 48rpx; border: 2rpx dashed #D1D5DB; border-radius: var(--radius-lg); background: var(--color-bg-page); }
+.upload-icon { font-size: 56rpx; margin-bottom: 12rpx; }
+.upload-text { font-size: var(--font-size-base); color: var(--color-text-secondary); }
+.upload-hint { font-size: var(--font-size-xs); color: var(--color-text-placeholder); margin-top: 4rpx; }

@@ -10,21 +10,30 @@
 
   <!-- 统计卡片 -->
   <view class="stats-row">
-    <view class="stat-card" bindtap="goToContracts">
+    <view wx:if="{{moduleAccess.contract}}" class="stat-card" bindtap="goToContracts">
       <text class="stat-value">{{stats.activeContracts}}</text>
       <text class="stat-label">执行中合同</text>
     </view>
-    <view class="stat-card" style="--color-primary: #D97706" bindtap="goToShipments">
+    <view wx:if="{{moduleAccess.shipping}}" class="stat-card" style="--color-primary: #D97706" bindtap="goToShipments">
       <text class="stat-value" style="color: #D97706">{{stats.pendingShipments}}</text>
       <text class="stat-label">在途运单</text>
     </view>
-    <view class="stat-card" style="--color-primary: #DC2626" bindtap="goToInventory">
+    <view wx:if="{{moduleAccess.inventory}}" class="stat-card" style="--color-primary: #DC2626" bindtap="goToInventory">
       <text class="stat-value" style="color: #DC2626">{{stats.lowStockAlerts}}</text>
       <text class="stat-label">库存预警</text>
     </view>
-    <view class="stat-card" style="--color-primary: #059669" bindtap="goToQuality">
+    <view wx:if="{{moduleAccess.quality}}" class="stat-card" style="--color-primary: #059669" bindtap="goToQuality">
       <text class="stat-value" style="color: #059669">{{stats.pendingQC}}</text>
       <text class="stat-label">待质检</text>
+    </view>
+  </view>
+
+  <view class="section-header"><text class="section-title">功能模块</text></view>
+  <view class="module-grid">
+    <view wx:for="{{moduleCards}}" wx:key="key" class="card module-card" bindtap="onOpenModule" data-key="{{item.key}}">
+      <text class="module-icon">{{item.icon}}</text>
+      <text class="module-title">{{item.title}}</text>
+      <text class="module-desc">{{item.desc}}</text>
     </view>
   </view>
 
@@ -55,7 +64,7 @@
   </view>
 
   <!-- 待确认质检 — 验货管理核心入口 -->
-  <block wx:if="{{pendingQCItems.length > 0}}">
+  <block wx:if="{{moduleAccess.quality && pendingQCItems.length > 0}}">
     <view class="section-header">
       <text class="section-title">🔍 待确认质检</text>
       <text class="section-more" bindtap="goToQuality">全部质检 ></text>
@@ -81,12 +90,13 @@
   </block>
 
   <!-- 供应商交付进度 -->
-  <view class="section-header">
+  <view wx:if="{{moduleAccess.contract}}" class="section-header">
     <text class="section-title">供应商交付进度</text>
     <text class="section-more" bindtap="goToContracts">查看全部 ></text>
   </view>
 
-  <view 
+  <view
+    wx:if="{{moduleAccess.contract}}"
     wx:for="{{supplierProgress}}" 
     wx:key="id" 
     class="card progress-card"
@@ -113,12 +123,12 @@
   </view>
 
   <!-- 库存预警 -->
-  <view class="section-header">
+  <view wx:if="{{moduleAccess.inventory}}" class="section-header">
     <text class="section-title">库存预警</text>
     <text class="section-more" bindtap="goToInventory">查看全部 ></text>
   </view>
 
-  <view class="alert-list">
+  <view wx:if="{{moduleAccess.inventory}}" class="alert-list">
     <view wx:for="{{lowStockItems}}" wx:key="skuCode" class="alert-item card">
       <view class="alert-icon">⚠️</view>
       <view class="alert-content">

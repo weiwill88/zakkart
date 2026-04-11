@@ -1,0 +1,7 @@
+.page-title { font-size: var(--font-size-xl); font-weight: 700; display: block; }
+.page-desc { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; margin-top: 4rpx; }
+.form-picker { display: flex; justify-content: space-between; align-items: center; padding: 20rpx 24rpx; border: 2rpx solid var(--color-border); border-radius: var(--radius-md); font-size: var(--font-size-base); }
+.picker-arrow { color: var(--color-text-placeholder); }
+.stock-hint { padding: 12rpx 24rpx; background: #ECFDF5; border-radius: var(--radius-md); margin-bottom: 20rpx; font-size: var(--font-size-sm); }
+.record-card { padding: 24rpx 32rpx !important; }
+.record-sku { font-size: var(--font-size-base); font-weight: 500; }

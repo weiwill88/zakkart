@@ -1,0 +1,69 @@
+<!--pages/quality/list/index.wxml - 质检列表-->
+<view class="page-container">
+  <view wx:if="{{canMarkProduced}}" class="section-header">
+    <text class="section-title">待标记已生产</text>
+  </view>
+  <view wx:if="{{canMarkProduced && productionList.length === 0}}" class="card">
+    <text class="empty-text">暂无待标记已生产的批次</text>
+  </view>
+  <view wx:for="{{productionList}}" wx:key="id" class="card production-card">
+    <view class="flex-between" style="margin-bottom: 12rpx">
+      <text class="qc-part">{{item.partName}}</text>
+      <view class="badge badge-pending">待生产</view>
+    </view>
+    <text class="qc-batch">{{item.batchNo}} · 计划交期 {{item.planDate}}</text>
+    <text class="qc-supplier">计划数量 {{item.plannedQty}} 件</text>
+    <view class="qc-actions">
+      <button class="btn btn-success btn-block btn-sm" catchtap="onMarkProduced" data-id="{{item.id}}" data-qty="{{item.plannedQty}}">标记已生产</button>
+    </view>
+  </view>
+
+  <view class="section-header"><text class="section-title">验货状态</text></view>
+  <view class="tabs">
+    <view class="tab-item {{activeTab === 'all' ? 'active' : ''}}" bindtap="switchTab" data-tab="all">全部</view>
+    <view class="tab-item {{activeTab === 'pending' ? 'active' : ''}}" bindtap="switchTab" data-tab="pending">待处理</view>
+    <view class="tab-item {{activeTab === 'done' ? 'active' : ''}}" bindtap="switchTab" data-tab="done">已完成</view>
+  </view>
+
+  <view wx:for="{{filteredList}}" wx:key="id" class="card qc-card" bindtap="goToDetail" data-id="{{item.id}}">
+    <view class="flex-between" style="margin-bottom: 16rpx">
+      <view class="badge {{item.badgeClass}}">{{item.statusLabel}}</view>
+      <text class="qc-date">{{item.inspectDate || '待安排'}}</text>
+    </view>
+    <text class="qc-part">{{item.partName}}</text>
+    <text class="qc-supplier">{{item.supplierName}} · {{item.contractNo}}</text>
+    <text class="qc-batch">{{item.batchNo}} · 总量 {{item.totalQty}} 件</text>
+
+    <block wx:if="{{item.passedQty > 0 || item.defectQty > 0}}">
+      <view class="qc-result">
+        <view class="result-item pass">
+          <text class="result-num">{{item.passedQty}}</text>
+          <text class="result-label">合格</text>
+        </view>
+        <view class="result-item fail">
+          <text class="result-num">{{item.defectQty}}</text>
+          <text class="result-label">次品</text>
+        </view>
+        <view class="result-item rate">
+          <text class="result-num">{{item.passRate}}%</text>
+          <text class="result-label">合格率</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- 管理员操作 -->
+    <view wx:if="{{isAdmin && item.status === 'PENDING_INSPECTION' && canInspect}}" class="qc-actions">
+      <button class="btn btn-primary btn-block btn-sm" catchtap="onArrangeQC" data-id="{{item.id}}">去提交验货结果</button>
+    </view>
+    <view wx:if="{{isAdmin && item.status !== 'PENDING_INSPECTION' && canInspect}}" class="qc-actions">
+      <button class="btn btn-success btn-sm" catchtap="goToConfirm" data-id="{{item.id}}">查看验货结果</button>
+    </view>
+  </view>
+
+  <view wx:if="{{filteredList.length === 0}}" class="empty-state">
+    <text class="empty-icon">🔍</text>
+    <text class="empty-text">{{emptyText}}</text>
+  </view>
+
+  <supplier-module-nav wx:if="{{isSupplier}}" currentKey="production" />
+</view>

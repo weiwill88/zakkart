@@ -30,6 +30,11 @@ Page({
   ensureAccess() {
     const app = getApp()
     const role = app.getRole()
+    if (role === 'admin' && !app.getAdminModuleAccess().contract) {
+      wx.showToast({ title: '当前账号没有合同模块权限', icon: 'none' })
+      wx.reLaunch({ url: '/pages/home/admin/index' })
+      return false
+    }
     if ((role === 'supplier' || role === 'supplier_worker') && !app.getSupplierModuleAccess().contract) {
       wx.showToast({ title: '当前账号没有合同与交付模块权限', icon: 'none' })
       wx.reLaunch({ url: '/pages/home/supplier/index' })

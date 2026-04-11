@@ -2,6 +2,7 @@
  * Zakkart 供应链管理系统 - 全局 App
  */
 const { ENV_ID } = require('./utils/config')
+const { ADMIN_PERMISSION_KEYS } = require('./utils/admin-permissions')
 
 const TOKEN_KEY = 'authToken'
 const USER_KEY = 'authUser'
@@ -96,7 +97,7 @@ App({
       return false
     }
 
-    if (['super_admin', 'admin', 'merchandiser'].includes(user.role)) {
+    if (user.role === 'super_admin') {
       return true
     }
 
@@ -116,6 +117,43 @@ App({
 
   hasAnyPermission(permissionKeys = []) {
     return (permissionKeys || []).some(key => this.hasPermission(key))
+  },
+
+  hasAdminModulePermission(permissionKey) {
+    const user = this.globalData.currentUser
+    if (!user || !permissionKey) {
+      return false
+    }
+
+    if (user.role === 'super_admin') {
+      return true
+    }
+
+    if (!['admin', 'merchandiser'].includes(user.role)) {
+      return false
+    }
+
+    const permissions = Array.isArray(user.permissions) ? user.permissions : []
+    const grantedKeys = new Set(
+      permissions
+        .filter((item) => {
+          if (!item) return false
+          if (typeof item === 'string') return true
+          return item.granted !== false
+        })
+        .map((item) => (typeof item === 'string' ? item : item.permission_key))
+        .filter(Boolean)
+    )
+
+    const hasConfiguredModules = permissions.some((item) => {
+      const permissionKey = typeof item === 'string' ? item : item?.permission_key
+      return ADMIN_PERMISSION_KEYS.includes(permissionKey)
+    })
+    if (!hasConfiguredModules) {
+      return true
+    }
+
+    return grantedKeys.has(permissionKey)
   },
 
   getSupplierModuleAccess() {
@@ -142,6 +180,31 @@ App({
       org: isSupplierOwner || this.hasPermission('manage_members'),
       settings: true
     }
+  },
+
+  getAdminModuleAccess() {
+    const user = this.globalData.currentUser
+    if (!user || !['super_admin', 'admin', 'merchandiser'].includes(user.role)) {
+      return {
+        dashboard: false,
+        contract: false,
+        quality: false,
+        inventory: false,
+        shipping: false,
+        notification: false,
+        settings: true
+      }
+    }
+
+    return {
+      dashboard: this.hasAdminModulePermission('module_dashboard'),
+      contract: this.hasAdminModulePermission('module_contract'),
+      quality: this.hasAdminModulePermission('module_quality'),
+      inventory: this.hasAdminModulePermission('module_inventory'),
+      shipping: this.hasAdminModulePermission('module_shipment'),
+      notification: this.hasAdminModulePermission('module_notification'),
+      settings: true
+    }
   }
 })
 
@@ -156,7 +219,7 @@ function mapRoleFromUser(user) {
     return 'admin'
   }
 
-  if (user.role === 'super_admin' || user.role === 'admin') {
+  if (user.role === 'super_admin' || user.role === 'admin' || user.role === 'merchandiser') {
     return 'admin'
   }
 

@@ -1,0 +1,29 @@
+.user-card { padding: 32rpx !important; }
+.user-info { display: flex; align-items: center; }
+.user-avatar { width: 96rpx; height: 96rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 36rpx; font-weight: 700; margin-right: 24rpx; }
+.user-detail { flex: 1; }
+.user-name { font-size: var(--font-size-xl); font-weight: 700; display: block; }
+.user-role { font-size: var(--font-size-sm); font-weight: 500; display: block; margin-top: 4rpx; }
+.user-org { font-size: var(--font-size-xs); color: var(--color-text-secondary); display: block; margin-top: 2rpx; }
+
+.role-switch-list { margin-bottom: 16rpx; }
+.role-switch-item { display: flex; align-items: center; padding: 24rpx 32rpx; background: var(--color-bg-card); margin-bottom: 2rpx; }
+.role-switch-item:first-child { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.role-switch-item:last-child { border-radius: 0 0 var(--radius-lg) var(--radius-lg); margin-bottom: 0; }
+.role-switch-item.current { background: #F0F7FF; }
+.role-switch-item:active { opacity: 0.8; }
+.role-icon { font-size: 40rpx; margin-right: 20rpx; }
+.role-info { flex: 1; }
+.role-name { font-size: var(--font-size-base); font-weight: 500; display: block; }
+.role-desc { font-size: var(--font-size-xs); color: var(--color-text-secondary); display: block; margin-top: 2rpx; }
+.current-tag { padding: 4rpx 16rpx; border-radius: var(--radius-full); color: #fff; font-size: 20rpx; }
+.current-tag text { color: #fff; }
+
+.menu-list { padding: 0 !important; }
+.menu-item { display: flex; align-items: center; padding: 28rpx 32rpx; border-bottom: 1rpx solid var(--color-border-light); }
+.menu-item:last-child { border-bottom: none; }
+.menu-icon { font-size: 36rpx; margin-right: 20rpx; }
+.menu-label { flex: 1; font-size: var(--font-size-base); }
+.menu-tag { font-size: 20rpx; color: var(--color-text-placeholder); padding: 2rpx 12rpx; background: var(--color-bg-page); border-radius: var(--radius-full); }
+
+.version-info { text-align: center; padding: 48rpx 0; font-size: var(--font-size-xs); color: var(--color-text-placeholder); }

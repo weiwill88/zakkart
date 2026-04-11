@@ -1,0 +1,86 @@
+<view class="page-container">
+  <view wx:if="{{org}}" class="card">
+    <text class="org-title">{{org.name}}</text>
+    <text class="org-subtitle">{{org.hasAssembly ? '组装厂 / 供应商' : '供应商'}}</text>
+    <view class="info-row"><text class="info-label">法人</text><text class="info-value">{{org.legalPerson}}</text></view>
+    <view class="info-row"><text class="info-label">信用代码</text><text class="info-value">{{org.creditCode}}</text></view>
+    <view class="info-row"><text class="info-label">开户银行</text><text class="info-value">{{org.bankName}}</text></view>
+    <view class="info-row"><text class="info-label">银行账号</text><text class="info-value">{{org.bankAccount}}</text></view>
+  </view>
+
+  <view class="section-header">
+    <text class="section-title">成员与权限</text>
+    <text wx:if="{{canManageMembers}}" class="section-more" bindtap="onOpenAddDialog">新增成员</text>
+  </view>
+
+  <view wx:if="{{!canManageMembers}}" class="card readonly-notice">
+    <text>当前账号可查看组织信息，但没有成员管理权限。如需添加厂长/对接人，请联系负责人授权。</text>
+  </view>
+
+  <view wx:for="{{members}}" wx:key="id" class="card member-card">
+    <view class="flex-between">
+      <view>
+        <text class="member-name">{{item.name}}</text>
+        <text class="member-phone">{{item.phone}}</text>
+      </view>
+      <view class="badge {{item.role === 'supplier_owner' ? 'badge-in-progress' : 'badge-pending'}}">{{item.roleLabel}}</view>
+    </view>
+    <text class="member-permission">权限：{{item.permissionSummary}}</text>
+    <view wx:if="{{canManageMembers && item.role !== 'supplier_owner'}}" class="member-actions">
+      <button class="btn btn-outline btn-sm" bindtap="onEditPermissions" data-id="{{item.id}}">编辑权限</button>
+      <button class="btn btn-danger btn-sm" bindtap="onDeleteMember" data-id="{{item.id}}" data-name="{{item.name}}">删除</button>
+    </view>
+  </view>
+
+  <view wx:if="{{showAddDialog}}" class="mask">
+    <view class="dialog-card">
+      <text class="dialog-title">新增成员</text>
+      <view class="form-group">
+        <text class="form-label">姓名</text>
+        <input class="form-input" value="{{addForm.name}}" bindinput="onAddNameInput" placeholder="请输入姓名" />
+      </view>
+      <view class="form-group">
+        <text class="form-label">手机号</text>
+        <input class="form-input" value="{{addForm.phone}}" bindinput="onAddPhoneInput" placeholder="请输入手机号" />
+      </view>
+      <view class="form-group">
+        <text class="form-label">角色</text>
+        <radio-group bindchange="onAddRoleChange">
+          <label class="radio-row">
+            <radio value="supplier_member" checked="{{addForm.role === 'supplier_member'}}" />
+            <text>成员</text>
+          </label>
+        </radio-group>
+      </view>
+      <view class="form-group">
+        <text class="form-label">授权</text>
+        <checkbox-group bindchange="onAddPermissionChange">
+          <label wx:for="{{addPermissionOptions}}" wx:key="key" class="checkbox-row">
+            <checkbox value="{{item.key}}" checked="{{item.checked}}" />
+            <text>{{item.label}}</text>
+          </label>
+        </checkbox-group>
+      </view>
+      <view class="dialog-actions">
+        <button class="btn btn-outline flex-1" bindtap="onCloseAddDialog">取消</button>
+        <button class="btn btn-primary flex-1" loading="{{saving}}" bindtap="onSubmitAdd">保存</button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showPermissionDialog && editingMember}}" class="mask">
+    <view class="dialog-card">
+      <text class="dialog-title">编辑权限 · {{editingMember.name}}</text>
+      <view wx:for="{{editPermissionOptions}}" wx:key="key" class="switch-row">
+        <text>{{item.label}}</text>
+        <switch checked="{{item.checked}}" data-key="{{item.key}}" bindchange="onPermissionSwitch" color="#1A56DB" />
+      </view>
+      <view class="dialog-actions">
+        <button class="btn btn-outline flex-1" bindtap="onClosePermissionDialog">取消</button>
+        <button class="btn btn-primary flex-1" loading="{{saving}}" bindtap="onSavePermissions">保存</button>
+      </view>
+    </view>
+  </view>
+
+  <supplier-module-nav currentKey="settings" />
+</view>
