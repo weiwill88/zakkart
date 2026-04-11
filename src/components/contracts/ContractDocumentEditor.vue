@@ -44,14 +44,11 @@
 
     <div class="contract-section">
       <h3>一、采购货物说明：<FieldText v-model="contract.productDesc" :editable="editable" width="220px" /></h3>
+      <p class="sub-title">1. 采购结算主表</p>
       <table class="contract-table">
         <thead>
           <tr>
-            <th>产品规格和尺寸标准</th>
             <th>产品型号</th>
-            <th>产品材质</th>
-            <th>产品重量</th>
-            <th>产品颜色</th>
             <th>采购数量</th>
             <th>采购单价（含税）</th>
             <th>采购金额（含税）</th>
@@ -60,19 +57,16 @@
         </thead>
         <tbody>
           <tr v-for="item in contract.productItems" :key="item.row_id">
-            <td><FieldText v-model="item.size" :editable="editable" width="120px" placeholder="尺寸/标准" /></td>
             <td><FieldText v-model="item.model" :editable="editable" width="120px" placeholder="型号" /></td>
-            <td><FieldText v-model="item.material" :editable="editable" width="100px" placeholder="材质" /></td>
-            <td><FieldText v-model="item.weight" :editable="editable" width="90px" placeholder="重量" /></td>
-            <td><FieldText v-model="item.color" :editable="editable" width="90px" placeholder="颜色" /></td>
-            <td>
+            <td class="qty-cell">
               <el-input
                 v-if="editable"
                 v-model="item.qty_detail"
                 type="textarea"
                 :rows="2"
               />
-              <span v-else style="white-space: pre-line">{{ item.qty_detail || '-' }}</span>
+              <span v-else class="qty-text">{{ formatQtyDetail(item) }}</span>
+              <div class="qty-total">合计：{{ formatQuantity(item.total_qty) }}</div>
             </td>
             <td>
               <el-input-number
@@ -92,21 +86,43 @@
             </td>
           </tr>
           <tr class="total-row">
-            <td :colspan="editable && allowRowDelete ? 8 : 7" style="text-align: right; font-weight: 600">合计采购总金额（含税）</td>
+            <td :colspan="editable && allowRowDelete ? 4 : 3" style="text-align: right; font-weight: 600">合计采购总金额（含税）</td>
             <td style="font-weight: 700; color: var(--color-danger)">{{ formatAmount(calcContractGrandTotal(contract)) }}</td>
           </tr>
         </tbody>
       </table>
 
-      <p class="sub-title">1. 成品货物要求</p>
+      <p class="sub-title">2. 规格说明表</p>
+      <table class="contract-table">
+        <thead>
+          <tr>
+            <th>产品型号</th>
+            <th>规格或尺寸</th>
+            <th>材质</th>
+            <th>重量</th>
+            <th>颜色</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in contract.productItems" :key="`${item.row_id}_spec`">
+            <td><FieldText v-model="item.model" :editable="editable" width="120px" placeholder="型号" /></td>
+            <td><FieldText v-model="item.size" :editable="editable" width="160px" placeholder="尺寸/标准" /></td>
+            <td><FieldText v-model="item.material" :editable="editable" width="100px" placeholder="材质" /></td>
+            <td><FieldText v-model="item.weight" :editable="editable" width="90px" placeholder="重量" /></td>
+            <td><FieldText v-model="item.color" :editable="editable" width="90px" placeholder="颜色" /></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="sub-title">3. 成品货物要求</p>
       <el-input v-if="editable" v-model="contract.clauseSections.quality_clause" type="textarea" :rows="4" />
       <p v-else class="contract-text">{{ contract.clauseSections.quality_clause }}</p>
 
-      <p class="sub-title">2. 乙方负责本合同产品生产的原材料有</p>
+      <p class="sub-title">4. 乙方负责本合同产品生产的原材料有</p>
       <el-input v-if="editable" v-model="contract.rawMaterials" type="textarea" :rows="2" />
       <p v-else class="contract-text">{{ contract.rawMaterials || '—' }}</p>
 
-      <p class="sub-title">3. 生产过程调整说明</p>
+      <p class="sub-title">5. 生产过程调整说明</p>
       <el-input v-if="editable" v-model="contract.clauseSections.variation_clause" type="textarea" :rows="3" />
       <p v-else class="contract-text">{{ contract.clauseSections.variation_clause }}</p>
     </div>
@@ -325,6 +341,16 @@ function formatAmount(value) {
   return `${number.toLocaleString()} 元`
 }
 
+function formatQuantity(value) {
+  const number = Number(value || 0)
+  return number.toLocaleString()
+}
+
+function formatQtyDetail(item) {
+  const detail = String(item.qty_detail || '').trim()
+  return detail || '-'
+}
+
 function splitLines(text) {
   return String(text || '').split('\n').filter(Boolean)
 }
@@ -392,6 +418,22 @@ function splitLines(text) {
 .sub-title {
   margin: 12px 0 4px;
   font-weight: 700;
+}
+
+.qty-cell {
+  min-width: 220px;
+  text-align: left !important;
+}
+
+.qty-text {
+  display: block;
+  white-space: pre-line;
+}
+
+.qty-total {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6B7280;
 }
 
 .contract-text {

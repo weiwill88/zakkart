@@ -34,12 +34,15 @@
 .document-paragraph { display: block; font-size: 24rpx; color: var(--color-text-primary); line-height: 1.9; white-space: pre-wrap; }
 .doc-table-scroll { width: 100%; margin: 12rpx 0 20rpx; }
 .doc-table { min-width: 980rpx; border: 1rpx solid var(--color-border); border-radius: 16rpx; overflow: hidden; }
-.doc-table.wide { min-width: 1200rpx; }
+.doc-table.settlement-table { min-width: 920rpx; }
+.doc-table.spec-table { min-width: 980rpx; }
 .doc-table-header, .doc-table-row { display: flex; }
 .doc-table-header { background: var(--color-bg-page); }
 .doc-table-row { border-top: 1rpx solid var(--color-border-light); }
 .doc-table-row.total { background: #fff7ed; font-weight: 600; }
 .doc-cell { flex: 1; padding: 16rpx 12rpx; font-size: 22rpx; text-align: center; border-right: 1rpx solid var(--color-border-light); white-space: pre-wrap; }
 .doc-cell.lg { flex: 1.4; }
+.doc-cell.xl { flex: 1.8; }
+.doc-cell.total-label { text-align: right; }
 .doc-table-header .doc-cell { font-weight: 600; color: var(--color-text-secondary); }
 .doc-table-header .doc-cell:last-child, .doc-table-row .doc-cell:last-child { border-right: none; }

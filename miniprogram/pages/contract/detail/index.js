@@ -167,14 +167,15 @@ function buildContractDocument(contract) {
     const price = Number(item.unit_price || 0)
     return {
       rowId: item.row_id,
-      size: item.size || '以产前样品为准',
       model: item.model || item.part_name || '',
+      size: item.size || '以产前样品为准',
       material: item.material || '-',
       weight: item.weight || '-',
       color: item.color || '-',
-      qtyDetail: item.qty_detail || '-',
+      qtyDetail: formatQtyText(item),
       unitPrice: hasPrice ? `${Number(item.unit_price).toFixed(2)} 元/件` : '-',
-      amount: hasPrice ? `${(qty * price).toLocaleString()} 元` : '-'
+      amount: hasPrice ? `${(qty * price).toLocaleString()} 元` : '-',
+      rawAmount: hasPrice ? qty * price : 0
     }
   })
   const deliveryRows = (contract.delivery_rows || []).map((row) => {
@@ -208,7 +209,22 @@ function buildContractDocument(contract) {
     section7Lines: splitLines(contract.clause_sections?.section7_text),
     section8Lines: splitLines(contract.clause_sections?.section8_text),
     section9Lines: splitLines(contract.clause_sections?.section9_text),
-    productItems,
+    settlementItems: productItems.map(item => ({
+      rowId: item.rowId,
+      model: item.model || '-',
+      qtyDetail: item.qtyDetail,
+      unitPrice: item.unitPrice,
+      amount: item.amount
+    })),
+    specItems: productItems.map(item => ({
+      rowId: item.rowId,
+      model: item.model || '-',
+      size: item.size,
+      material: item.material,
+      weight: item.weight,
+      color: item.color
+    })),
+    grandTotal: `${productItems.reduce((sum, item) => sum + Number(item.rawAmount || 0), 0).toLocaleString()} 元`,
     deliveryHeaders: productItems.map(item => item.model || '配件'),
     deliveryRows,
     deliveryTotals,
@@ -218,4 +234,10 @@ function buildContractDocument(contract) {
 
 function splitLines(text) {
   return String(text || '').split('\n').filter(Boolean)
+}
+
+function formatQtyText(item) {
+  const detail = String(item.qty_detail || '').trim()
+  const totalQty = Number(item.total_qty || 0).toLocaleString()
+  return detail ? `${detail}\n合计：${totalQty}` : `合计：${totalQty}`
 }

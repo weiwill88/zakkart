@@ -41,33 +41,38 @@ export function buildContractWord(c) {
   // Section 1: Product details
   sections.push(heading(`一、采购货物说明：${c.productDesc}`))
 
-  // Product table
-  const prodHeader = tableRow(['产品规格和尺寸标准', '产品型号', '产品材质', '产品重量', '产品颜色', '采购数量', '采购单价（含税）', '采购金额（含税）'], true)
-  const prodRows = productItems.map(item => {
+  sections.push(p(AlignmentType.LEFT, [t('1. 采购结算主表', 22, true)], { before: 80, after: 80 }))
+  const settlementHeader = tableRow(['产品型号', '采购数量', '采购单价（含税）', '采购金额（含税）'], true)
+  const settlementRows = productItems.map(item => {
     const price = parseFloat(item.unit_price ?? item.unitPrice)
     const totalQty = Number((item.total_qty ?? item.totalQty) || 0)
     const amount = !Number.isNaN(price) ? (price * totalQty).toLocaleString() + '元' : '____元'
     return tableRow([
-      item.size || '以产前样品为准',
       item.model || item.part_name || item.partName || '',
-      item.material || '',
-      item.weight || '',
-      item.color || '',
-      String(item.qty_detail || item.qtyDetail || '').replace(/\n/g, '；'),
+      formatQtyText(item),
       price || price === 0 ? `${price}元/件` : '____元/件',
       amount
     ])
   })
-  // Total row
   const grandTotal = calcTotal(c)
-  prodRows.push(tableRow(['', '', '', '', '', '合计采购总金额（含税）', grandTotal], false))
+  settlementRows.push(summaryRow('合计采购总金额（含税）', grandTotal, 3))
+  sections.push(new Table({ rows: [settlementHeader, ...settlementRows], width: { size: 100, type: WidthType.PERCENTAGE } }))
 
-  sections.push(new Table({ rows: [prodHeader, ...prodRows], width: { size: 100, type: WidthType.PERCENTAGE } }))
+  sections.push(p(AlignmentType.LEFT, [t('2. 规格说明表', 22, true)], { before: 120, after: 80 }))
+  const specHeader = tableRow(['产品型号', '规格或尺寸', '材质', '重量', '颜色'], true)
+  const specRows = productItems.map(item => tableRow([
+    item.model || item.part_name || item.partName || '',
+    item.size || '以产前样品为准',
+    item.material || '',
+    item.weight || '',
+    item.color || ''
+  ]))
+  sections.push(new Table({ rows: [specHeader, ...specRows], width: { size: 100, type: WidthType.PERCENTAGE } }))
 
   // Requirements
-  sections.push(p(AlignmentType.JUSTIFIED, [t(`1. 成品货物要求：${clauseSections.quality_clause || ''}`, 22)], { before: 100 }))
-  sections.push(p(AlignmentType.JUSTIFIED, [t(`2. 乙方负责本合同产品生产的原材料有：${c.rawMaterials || '________'}`, 22)]))
-  sections.push(p(AlignmentType.JUSTIFIED, [t(`3. ${clauseSections.variation_clause || '货物实际生产时，上述产品尺寸、规格、重量、颜色发生调整改动的以双方认同的产品产前样为准。'}`, 22)]))
+  sections.push(p(AlignmentType.JUSTIFIED, [t(`3. 成品货物要求：${clauseSections.quality_clause || ''}`, 22)], { before: 100 }))
+  sections.push(p(AlignmentType.JUSTIFIED, [t(`4. 乙方负责本合同产品生产的原材料有：${c.rawMaterials || '________'}`, 22)]))
+  sections.push(p(AlignmentType.JUSTIFIED, [t(`5. ${clauseSections.variation_clause || '货物实际生产时，上述产品尺寸、规格、重量、颜色发生调整改动的以双方认同的产品产前样为准。'}`, 22)]))
 
   // Section 2: Delivery plan
   sections.push(heading('二、产品采购下单方式及产品交付时间：'))
@@ -151,6 +156,35 @@ function tableRow(cells, isHeader = false) {
       })
     )
   })
+}
+
+function summaryRow(label, value, labelSpan = 1) {
+  return new TableRow({
+    children: [
+      new TableCell({
+        columnSpan: labelSpan,
+        children: [new Paragraph({
+          alignment: AlignmentType.RIGHT,
+          children: [new TextRun({ text: label, bold: true, size: 18, font: '宋体' })]
+        })],
+        borders: cellBorders
+      }),
+      new TableCell({
+        children: [new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [new TextRun({ text: String(value), bold: true, size: 18, font: '宋体' })]
+        })],
+        borders: cellBorders
+      })
+    ]
+  })
+}
+
+function formatQtyText(item = {}) {
+  const detail = String(item.qty_detail || item.qtyDetail || '').trim()
+  const totalQty = Number((item.total_qty ?? item.totalQty) || 0)
+  const totalText = `合计：${totalQty.toLocaleString()}`
+  return detail ? `${detail.replace(/\n/g, '；')}；${totalText}` : totalText
 }
 
 function calcTotal(c) {

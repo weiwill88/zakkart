@@ -90,32 +90,48 @@
     <view class="document-section">
       <text class="document-subtitle">一、采购货物说明：{{contract.document.productDesc}}</text>
       <scroll-view scroll-x class="doc-table-scroll">
-        <view class="doc-table wide">
+        <view class="doc-table settlement-table">
           <view class="doc-table-header">
-            <text class="doc-cell lg">产品规格和尺寸标准</text>
             <text class="doc-cell">产品型号</text>
-            <text class="doc-cell">产品材质</text>
-            <text class="doc-cell">产品重量</text>
-            <text class="doc-cell">产品颜色</text>
-            <text class="doc-cell lg">采购数量</text>
+            <text class="doc-cell xl">采购数量</text>
             <text class="doc-cell">采购单价</text>
             <text class="doc-cell">采购金额</text>
           </view>
-          <view wx:for="{{contract.document.productItems}}" wx:key="rowId" class="doc-table-row">
-            <text class="doc-cell lg">{{item.size}}</text>
+          <view wx:for="{{contract.document.settlementItems}}" wx:key="rowId" class="doc-table-row">
             <text class="doc-cell">{{item.model}}</text>
-            <text class="doc-cell">{{item.material}}</text>
-            <text class="doc-cell">{{item.weight}}</text>
-            <text class="doc-cell">{{item.color}}</text>
-            <text class="doc-cell lg">{{item.qtyDetail}}</text>
+            <text class="doc-cell xl">{{item.qtyDetail}}</text>
             <text class="doc-cell">{{item.unitPrice}}</text>
             <text class="doc-cell">{{item.amount}}</text>
           </view>
+          <view class="doc-table-row total">
+            <text class="doc-cell total-label" style="flex: 3">合计采购总金额（含税）</text>
+            <text class="doc-cell">{{contract.document.grandTotal}}</text>
+          </view>
         </view>
       </scroll-view>
-      <text class="document-line">1. 成品货物要求：{{contract.document.qualityClause}}</text>
-      <text class="document-line">2. 乙方负责本合同产品生产的原材料有：{{contract.document.rawMaterials || '—'}}</text>
-      <text class="document-line">3. {{contract.document.variationClause}}</text>
+      <scroll-view scroll-x class="doc-table-scroll">
+        <view class="doc-table spec-table">
+          <view class="doc-table-header">
+            <text class="doc-cell">产品型号</text>
+            <text class="doc-cell xl">规格或尺寸</text>
+            <text class="doc-cell">材质</text>
+            <text class="doc-cell">重量</text>
+            <text class="doc-cell">颜色</text>
+          </view>
+          <view wx:for="{{contract.document.specItems}}" wx:key="rowId" class="doc-table-row">
+            <text class="doc-cell">{{item.model}}</text>
+            <text class="doc-cell xl">{{item.size}}</text>
+            <text class="doc-cell">{{item.material}}</text>
+            <text class="doc-cell">{{item.weight}}</text>
+            <text class="doc-cell">{{item.color}}</text>
+          </view>
+        </view>
+      </scroll-view>
+      <text class="document-line">1. 采购结算主表如上。</text>
+      <text class="document-line">2. 规格说明表如上。</text>
+      <text class="document-line">3. 成品货物要求：{{contract.document.qualityClause}}</text>
+      <text class="document-line">4. 乙方负责本合同产品生产的原材料有：{{contract.document.rawMaterials || '—'}}</text>
+      <text class="document-line">5. {{contract.document.variationClause}}</text>
     </view>
 
     <view class="document-section">

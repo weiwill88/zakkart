@@ -4,13 +4,13 @@
     <el-card shadow="never" style="margin-bottom: 20px">
       <div style="display: flex; gap: 16px; align-items: center">
         <el-input v-model="keyword" placeholder="搜索地址名称 / 详细地址 / 联系人" prefix-icon="Search" clearable style="width: 320px" @input="debouncedSearch" />
-        <el-select v-model="typeFilter" placeholder="地址类型" clearable style="width: 140px" @change="loadList">
+        <el-select v-if="!isTypeLocked" v-model="typeFilter" placeholder="地址类型" clearable style="width: 140px" @change="loadList">
           <el-option label="工厂" value="factory" />
           <el-option label="组装厂" value="assembly" />
           <el-option label="货代" value="freight" />
         </el-select>
         <div style="flex: 1" />
-        <el-button type="primary" icon="Plus" @click="openCreate">新增地址</el-button>
+        <el-button type="primary" icon="Plus" @click="openCreate">新增{{ dialogEntityLabel }}</el-button>
       </div>
     </el-card>
 
@@ -18,7 +18,7 @@
     <el-card shadow="never">
       <el-table :data="list" border stripe v-loading="loading">
         <el-table-column type="index" width="50" label="#" />
-        <el-table-column prop="type" label="类型" width="100">
+        <el-table-column v-if="!isTypeLocked" prop="type" label="类型" width="100">
           <template #default="{ row }">
             <el-tag :type="typeTag[row.type]" size="small">{{ typeLabel[row.type] }}</el-tag>
           </template>
@@ -41,13 +41,13 @@
           </template>
         </el-table-column>
       </el-table>
-      <el-empty v-if="!loading && list.length === 0" description="暂无地址数据" />
+      <el-empty v-if="!loading && list.length === 0" :description="emptyDescription" />
     </el-card>
 
     <!-- 新增/编辑对话框 -->
-    <el-dialog v-model="showDialog" :title="form._id ? '编辑地址' : '新增地址'" width="550px">
+    <el-dialog v-model="showDialog" :title="form._id ? `编辑${dialogEntityLabel}` : `新增${dialogEntityLabel}`" width="550px">
       <el-form :model="form" label-width="100px">
-        <el-form-item label="地址类型" required>
+        <el-form-item v-if="!isTypeLocked" label="地址类型" required>
           <el-select v-model="form.type" style="width: 100%">
             <el-option label="工厂地址" value="factory" />
             <el-option label="组装厂地址" value="assembly" />
@@ -88,10 +88,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { fetchAddressList, createAddress, updateAddress, deleteAddress } from '../../services/address'
 
+const route = useRoute()
 const loading = ref(false)
 const formSaving = ref(false)
 const list = ref([])
@@ -104,6 +106,20 @@ const form = ref({ ...emptyForm })
 
 const typeLabel = { factory: '工厂', assembly: '组装厂', freight: '货代' }
 const typeTag = { factory: '', assembly: 'warning', freight: 'info' }
+const lockedType = computed(() => route.meta.addressType || '')
+const isTypeLocked = computed(() => Boolean(lockedType.value))
+const dialogEntityLabel = computed(() => {
+  if (lockedType.value === 'freight') {
+    return '货代地址'
+  }
+  return '地址'
+})
+const emptyDescription = computed(() => {
+  if (lockedType.value === 'freight') {
+    return '暂无货代地址'
+  }
+  return '暂无地址数据'
+})
 
 let searchTimer = null
 function debouncedSearch() {
@@ -116,7 +132,11 @@ async function loadList() {
   try {
     const params = { page: 1, pageSize: 100 }
     if (keyword.value) params.keyword = keyword.value
-    if (typeFilter.value) params.type = typeFilter.value
+    if (lockedType.value) {
+      params.type = lockedType.value
+    } else if (typeFilter.value) {
+      params.type = typeFilter.value
+    }
     const result = await fetchAddressList(params)
     list.value = result.list || []
   } catch (e) {
@@ -128,16 +148,19 @@ async function loadList() {
 }
 
 function openCreate() {
-  form.value = { ...emptyForm }
+  form.value = { ...emptyForm, type: lockedType.value || emptyForm.type }
   showDialog.value = true
 }
 
 function openEdit(row) {
-  form.value = { ...row }
+  form.value = { ...row, type: lockedType.value || row.type || emptyForm.type }
   showDialog.value = true
 }
 
 async function handleSave() {
+  if (lockedType.value) {
+    form.value.type = lockedType.value
+  }
   if (!form.value.type || !form.value.label || !form.value.detail) {
     ElMessage.warning('请填写必填字段')
     return
@@ -171,6 +194,17 @@ async function handleDelete(id) {
 }
 
 onMounted(() => {
+  if (lockedType.value) {
+    typeFilter.value = lockedType.value
+  }
+  loadList()
+})
+
+watch(lockedType, (value) => {
+  typeFilter.value = value || ''
+  if (!showDialog.value) {
+    form.value = { ...emptyForm, type: value || emptyForm.type }
+  }
   loadList()
 })
 </script>

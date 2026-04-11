@@ -91,14 +91,14 @@ const menuGroups = [
     label: '物流与发货',
     items: [
       { path: '/shipments', label: '发货管理', icon: '🚚' },
-      { path: '/freight', label: '货代单据', icon: '📦' }
+      { path: '/freight', label: '货代单据', icon: '📦' },
+      { path: '/freight-addresses', label: '货代地址维护', icon: '📍' }
     ]
   },
   {
     label: '系统',
     items: [
       { path: '/notifications', label: '通知中心', icon: '🔔' },
-      { path: '/addresses', label: '地址中心', icon: '📍' },
       { path: '/settings', label: '系统设置', icon: '⚙️' }
     ]
   }
