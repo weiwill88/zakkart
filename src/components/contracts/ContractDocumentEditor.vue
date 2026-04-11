@@ -142,7 +142,18 @@
         </thead>
         <tbody>
           <tr v-for="row in contract.deliveryRows" :key="row.row_id">
-            <td><FieldText v-model="row.date" :editable="editable" width="110px" placeholder="YYYY-MM-DD" /></td>
+            <td>
+              <el-date-picker
+                v-if="editable"
+                v-model="row.date"
+                type="date"
+                value-format="YYYY-MM-DD"
+                placeholder="选择日期"
+                size="small"
+                style="width: 140px"
+              />
+              <span v-else>{{ row.date || '-' }}</span>
+            </td>
             <td v-for="item in contract.productItems" :key="item.row_id">
               <el-input-number
                 v-if="editable"

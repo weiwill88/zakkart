@@ -1,0 +1,131 @@
+<!--pages/home/admin/index.wxml - 管理员工作台-->
+<view class="page-container">
+  <!-- 顶部欢迎区 -->
+  <view class="welcome-section">
+    <view class="welcome-left">
+      <text class="welcome-greeting">{{greeting}}好</text>
+      <text class="welcome-name">{{user.name}}，{{user.org.name}}</text>
+    </view>
+  </view>
+
+  <!-- 统计卡片 -->
+  <view class="stats-row">
+    <view class="stat-card" bindtap="goToContracts">
+      <text class="stat-value">{{stats.activeContracts}}</text>
+      <text class="stat-label">执行中合同</text>
+    </view>
+    <view class="stat-card" style="--color-primary: #D97706" bindtap="goToShipments">
+      <text class="stat-value" style="color: #D97706">{{stats.pendingShipments}}</text>
+      <text class="stat-label">在途运单</text>
+    </view>
+    <view class="stat-card" style="--color-primary: #DC2626" bindtap="goToInventory">
+      <text class="stat-value" style="color: #DC2626">{{stats.lowStockAlerts}}</text>
+      <text class="stat-label">库存预警</text>
+    </view>
+    <view class="stat-card" style="--color-primary: #059669" bindtap="goToQuality">
+      <text class="stat-value" style="color: #059669">{{stats.pendingQC}}</text>
+      <text class="stat-label">待质检</text>
+    </view>
+  </view>
+
+  <!-- 待办事项 -->
+  <view class="section-header">
+    <text class="section-title">待办事项</text>
+    <text class="section-more" bindtap="goToNotifications">查看全部 ></text>
+  </view>
+
+  <view class="todo-list">
+    <view 
+      wx:for="{{todoItems}}" 
+      wx:key="id" 
+      class="todo-item card"
+      bindtap="onTodoTap"
+      data-item="{{item}}"
+    >
+      <view class="todo-icon {{item.urgency}}">
+        <text>{{item.icon}}</text>
+      </view>
+      <view class="todo-content">
+        <text class="todo-title">{{item.title}}</text>
+        <text class="todo-desc">{{item.content}}</text>
+        <text class="todo-time">{{item.time}}</text>
+      </view>
+      <view class="list-item-arrow"></view>
+    </view>
+  </view>
+
+  <!-- 待确认质检 — 验货管理核心入口 -->
+  <block wx:if="{{pendingQCItems.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">🔍 待确认质检</text>
+      <text class="section-more" bindtap="goToQuality">全部质检 ></text>
+    </view>
+    <view wx:for="{{pendingQCItems}}" wx:key="id" class="card qc-admin-card" bindtap="goToQCConfirm" data-id="{{item.id}}">
+      <view class="flex-between" style="margin-bottom: 8rpx">
+        <text style="font-size: 28rpx; font-weight: 600">{{item.partName}}</text>
+        <view class="badge badge-pending">待确认</view>
+      </view>
+      <text style="font-size: 24rpx; color: #6B7280; display: block">{{item.supplierName}} · {{item.batchNo}} · {{item.totalQty}} 件</text>
+      <view wx:if="{{item.passedQty > 0}}" style="display: flex; gap: 16rpx; margin-top: 12rpx">
+        <view style="flex: 1; text-align: center; padding: 8rpx; background: #ECFDF5; border-radius: 8rpx">
+          <text style="font-size: 28rpx; font-weight: 700; color: #059669">{{item.passedQty}}</text>
+          <text style="font-size: 20rpx; color: #6B7280"> 合格</text>
+        </view>
+        <view style="flex: 1; text-align: center; padding: 8rpx; background: #FEF2F2; border-radius: 8rpx">
+          <text style="font-size: 28rpx; font-weight: 700; color: #DC2626">{{item.defectQty}}</text>
+          <text style="font-size: 20rpx; color: #6B7280"> 次品</text>
+        </view>
+      </view>
+      <button class="btn btn-primary btn-block btn-sm" style="margin-top: 16rpx" catchtap="goToQCConfirm" data-id="{{item.id}}">去确认验货结果</button>
+    </view>
+  </block>
+
+  <!-- 供应商交付进度 -->
+  <view class="section-header">
+    <text class="section-title">供应商交付进度</text>
+    <text class="section-more" bindtap="goToContracts">查看全部 ></text>
+  </view>
+
+  <view 
+    wx:for="{{supplierProgress}}" 
+    wx:key="id" 
+    class="card progress-card"
+    bindtap="goToContractDetail"
+    data-id="{{item.id}}"
+  >
+    <view class="flex-between" style="margin-bottom: 16rpx;">
+      <view>
+        <text class="card-title">{{item.supplierName}}</text>
+        <text class="card-subtitle">{{item.partName}} · {{item.contractNo}}</text>
+      </view>
+      <view class="badge {{item.statusClass}}">{{item.statusText}}</view>
+    </view>
+    <view class="progress-info">
+      <text class="progress-text">{{item.deliveredQty}} / {{item.totalQty}}</text>
+      <text class="progress-percent">{{item.progress}}%</text>
+    </view>
+    <view class="progress-bar">
+      <view class="progress-fill" style="width: {{item.progress}}%"></view>
+    </view>
+    <view class="batch-info">
+      <text class="batch-text">下一批：{{item.nextBatchDate}}（{{item.nextBatchDesc}}）</text>
+    </view>
+  </view>
+
+  <!-- 库存预警 -->
+  <view class="section-header">
+    <text class="section-title">库存预警</text>
+    <text class="section-more" bindtap="goToInventory">查看全部 ></text>
+  </view>
+
+  <view class="alert-list">
+    <view wx:for="{{lowStockItems}}" wx:key="skuCode" class="alert-item card">
+      <view class="alert-icon">⚠️</view>
+      <view class="alert-content">
+        <text class="alert-title">{{item.productName}} · {{item.skuCode}}</text>
+        <text class="alert-desc">当前库存 {{item.qty}} 件，低于阈值 {{item.alertThreshold}} 件</text>
+        <text class="alert-warehouse">{{item.warehouseName}}</text>
+      </view>
+    </view>
+  </view>
+</view>

@@ -167,6 +167,9 @@
 - [x] 合同正文表格已改为双表结构：`采购结算主表` + `规格说明表`，避免 PC 端与 Word 导出横向溢出/错行
 - [x] 地址入口已按验收意见收敛：取消独立“地址中心”导航入口，货代地址改为“物流与发货 -> 货代地址维护”
 - [x] 发货映射规则当前保持现状：系统仍按地址类型筛选 `assembly / freight`，暂未实现“组装厂绑定特定货代”
+- [x] 小程序原型模式已下线：移除角色切换入口、原型 fallback 与 `role-select` 页面，正式环境仅保留手机号验证码登录
+- [x] 合同签署上传后已支持按合同内结构化交付计划自动生成真实批次，供应商侧可直接进入“待生产”
+- [x] 合同交付日期录入已统一改为日期选择器，保存格式固定为 `YYYY-MM-DD`
 
 **进行中：**
 - [x] 阶段 2 云端部署与联调
@@ -220,6 +223,8 @@
 - 供应商信息增强：`admin/src/views/suppliers/SupplierDetail.vue` 已支持原材料维护，合同默认从供应商基础工商/财务信息映射乙方信息与收款账户
 - 地址入口调整：`admin/src/views/addresses/AddressList.vue` 改为可按路由锁定类型，新增 `货代地址维护` 入口复用同一套 `addresses` 数据
 - 后端辅助：`cloudfunctions/api/utils/contract-document.js`、`routes/contract.js`、`routes/order.js`、`routes/organization.js`、`routes/partType.js` 已补合同全文、供应商映射、配件全量保存支持
+- 状态链路补强：`cloudfunctions/api/routes/contract.js` 在上传已签合同后，若存在有效交付计划，将自动生成 `delivery_batches`
+- 小程序正式化收口：`miniprogram/app.js`、`utils/role.js`、`pages/settings/*`、各首页已移除原型角色切换与 mock fallback
 - 部署文件：`deploy-packages/api-cloudfunction.zip` 需随最新代码重新打包上传
 
 ### 联调结论（2026-04-06）
@@ -240,6 +245,7 @@
 - 小程序合同全文查看链路已打通：供应商收到 PC 端推送后，可先在线查看合同正文并确认；签署完成后继续查看归档 PDF
 - 合同采购货物说明已按一期验收反馈收敛为正文双表，现阶段不做“附表/附件页”拆分
 - 地址数据源未拆分：供应商地址与货代地址仍共用 `addresses` 集合，仅调整入口与维护位置；“组装厂绑定特定货代”仍待未来单独设计
+- PRD 中“合同签署后自动生成待生产批次”的主链路已与代码实现对齐，避免“合同交付”和“生产验货”之间断层
 - 司机 H5 第三轮收口已完成：升级 CloudBase Web SDK V2、兼容匿名登录、同一二维码可重复打开并支持现场连续完成 Step1/Step2
 - 司机凭证查看已补齐：供应商/收货方小程序与甲方 PC 端可查看手写签名、装车照片、接单/提货 GPS
 - 供应商小程序 IA 首轮重构已完成：首页改为模块工作台；合同、生产、发货模块按权限裁剪，不再用负责人/成员两套固定导航壳

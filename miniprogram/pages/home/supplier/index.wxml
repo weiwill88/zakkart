@@ -1,0 +1,144 @@
+<!--pages/home/supplier/index.wxml - 供应商首页（增强版）-->
+<view class="page-container">
+  <view class="welcome-section">
+    <view class="welcome-left">
+      <text class="welcome-greeting">{{user.roleName}}</text>
+      <text class="welcome-name">{{user.name}} · {{user.org.name}}</text>
+    </view>
+  </view>
+
+  <!-- 权限差异提示（库管看到的） -->
+  <view wx:if="{{isWorker}}" class="permission-notice">
+    <text class="notice-text">👷 库管视角：您可以填报发货和拍照，合同金额等信息由负责人管理</text>
+  </view>
+
+  <view class="stats-row">
+    <view wx:if="{{moduleAccess.contract}}" class="stat-card" bindtap="goToContracts">
+      <text class="stat-value" style="color: #059669">{{stats.activeContracts}}</text>
+      <text class="stat-label">执行中合同</text>
+    </view>
+    <view wx:if="{{moduleAccess.shipping}}" class="stat-card" bindtap="goToShipments">
+      <text class="stat-value" style="color: #D97706">{{stats.pendingDelivery}}</text>
+      <text class="stat-label">待发货</text>
+    </view>
+    <view wx:if="{{moduleAccess.production}}" class="stat-card" bindtap="goToQuality">
+      <text class="stat-value" style="color: #DC2626">{{stats.pendingQC}}</text>
+      <text class="stat-label">待验货</text>
+    </view>
+  </view>
+
+  <view class="section-header"><text class="section-title">业务模块</text></view>
+  <view class="module-grid">
+    <view wx:for="{{moduleCards}}" wx:key="key" class="card module-card" bindtap="onOpenModule" data-key="{{item.key}}">
+      <view class="module-icon">{{item.icon}}</view>
+      <text class="module-title">{{item.title}}</text>
+      <text class="module-desc">{{item.description}}</text>
+      <text class="module-stat">{{item.stat}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{batchHint}}" class="card batch-hint-card">
+    <text class="batch-hint-title">交付批次提示</text>
+    <text class="batch-hint-text">{{batchHint}}</text>
+  </view>
+
+  <!-- 待验货卡片 — 核心验货入口 -->
+  <block wx:if="{{moduleAccess.production && qcItems.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">🔍 验货状态</text>
+      <text class="section-more" bindtap="goToQuality">查看全部 ></text>
+    </view>
+    <view wx:for="{{qcItems}}" wx:key="id" class="card qc-entry" bindtap="goToQCDetail" data-id="{{item.id}}">
+      <view class="flex-between" style="margin-bottom: 8rpx">
+        <text class="qc-entry-part">{{item.partName}} · {{item.batchNo}}</text>
+        <view class="badge {{item.badgeClass}}">{{item.statusLabel}}</view>
+      </view>
+      <text class="qc-entry-info">{{item.totalQty}} 件</text>
+      <block wx:if="{{item.passedQty > 0 || item.defectQty > 0}}">
+        <view class="qc-entry-result">
+          <text class="{{item.status === 'PENDING_SHIPMENT' ? 'result-pass' : 'result-partial'}}">
+            {{item.status === 'PENDING_SHIPMENT' ? '✅ 验货已完成' : '⚠️ 验货有异常'}}
+          </text>
+          <text>合格 {{item.passedQty}} / 次品 {{item.defectQty}}</text>
+        </view>
+      </block>
+      <block wx:if="{{item.status === 'PENDING_INSPECTION'}}">
+        <view class="qc-entry-result"><text style="color: #D97706">⏳ 验货中，等待管理员确认结果</text></view>
+      </block>
+    </view>
+  </block>
+
+  <block wx:if="{{moduleAccess.shipping && readyToShip.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">🚚 待发货</text>
+      <text class="section-more" bindtap="goToShipments">查看全部 ></text>
+    </view>
+    <view wx:for="{{readyToShip}}" wx:key="id" class="card">
+      <view class="flex-between" style="margin-bottom: 8rpx">
+        <text style="font-size: 28rpx; font-weight: 600">{{item.partName}} · {{item.batchNo}}</text>
+        <view class="badge badge-completed">待发货</view>
+      </view>
+      <text style="font-size: 24rpx; color: #6B7280; display: block">{{item.contractNo}} · {{item.totalQty}} 件</text>
+      <button wx:if="{{canCreateShipment}}" class="btn btn-primary btn-block" style="margin-top: 16rpx" catchtap="onCreateShipment" data-id="{{item.id}}">
+        创建发货单
+      </button>
+    </view>
+  </block>
+
+  <!-- 待标记生产 -->
+  <block wx:if="{{moduleAccess.production && canMarkProduced && readyToMark.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">🏭 待标记已生产</text>
+    </view>
+    <view wx:for="{{readyToMark}}" wx:key="id" class="card">
+      <view class="flex-between" style="margin-bottom: 8rpx">
+        <text style="font-size: 28rpx; font-weight: 600">{{item.partName}} · {{item.batchNo}}</text>
+        <view class="badge badge-pending">待生产</view>
+      </view>
+      <text style="font-size: 24rpx; color: #6B7280; display: block">计划交期：{{item.planDate}} · {{item.planQty}} 件</text>
+      <button class="btn btn-success btn-block" style="margin-top: 16rpx" catchtap="onMarkProduced" data-id="{{item.id}}" data-qty="{{item.rawPlanQty}}">
+        标记为"已生产·待验货"
+      </button>
+    </view>
+  </block>
+
+  <!-- 最新通知 -->
+  <view class="section-header"><text class="section-title">待办事项</text></view>
+  <view wx:for="{{todoItems}}" wx:key="id" class="card todo-item" catchtap="onTodoTap" data-target="{{item.target}}" data-target-id="{{item.targetId}}">
+    <view class="todo-icon info"><text>{{item.icon}}</text></view>
+    <view class="todo-content">
+      <text class="todo-title">{{item.title}}</text>
+      <text class="todo-desc">{{item.content}}</text>
+      <text class="todo-time">{{item.time}}</text>
+    </view>
+    <view wx:if="{{item.target}}" class="list-item-arrow"></view>
+  </view>
+
+  <block wx:if="{{moduleAccess.contract}}">
+    <view class="section-header">
+      <text class="section-title">最近合同</text>
+      <text class="section-more" bindtap="goToContracts">查看全部 ></text>
+    </view>
+    <view wx:for="{{recentContracts}}" wx:key="id" class="card" bindtap="goToContractDetail" data-id="{{item.id}}">
+      <view class="flex-between" style="margin-bottom: 12rpx">
+        <text class="card-title">{{item.partName}}</text>
+        <view class="badge {{item.statusClass}}">{{item.statusText}}</view>
+      </view>
+      <text class="card-subtitle">{{item.contractNo}}</text>
+      <view wx:if="{{!isWorker && item.totalAmount}}" class="info-row" style="margin-top: 8rpx">
+        <text class="info-label">合同金额</text>
+        <text class="info-value" style="font-weight: 600; color: #059669">¥{{item.totalAmount}}</text>
+      </view>
+      <view class="progress-info" style="margin-top: 16rpx">
+        <text class="progress-text">已交付 {{item.deliveredQty}} / {{item.totalQty}}</text>
+        <text class="progress-percent">{{item.progress}}%</text>
+      </view>
+      <view class="progress-bar"><view class="progress-fill" style="width: {{item.progress}}%"></view></view>
+    </view>
+    <view wx:if="{{recentContracts.length === 0}}" class="card">
+      <text class="timeline-desc">当前没有可展示的合同记录</text>
+    </view>
+  </block>
+
+  <supplier-module-nav currentKey="home" />
+</view>

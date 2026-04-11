@@ -1,0 +1,513 @@
+/**
+ * Zakkart 供应链管理系统 - 全局样式 & 设计系统
+ * 
+ * 设计原则：
+ * - 专业的 B2B 供应链管理风格
+ * - 清晰的信息层级
+ * - 高效的操作体验
+ */
+
+/* ============================================
+   1. CSS 变量 - 设计令牌
+   ============================================ */
+page {
+  /* 主色调 */
+  --color-primary: #1A56DB;
+  --color-primary-light: #3B82F6;
+  --color-primary-lighter: #DBEAFE;
+  --color-primary-dark: #1E40AF;
+
+  /* 功能色 */
+  --color-success: #059669;
+  --color-success-light: #D1FAE5;
+  --color-warning: #D97706;
+  --color-warning-light: #FEF3C7;
+  --color-danger: #DC2626;
+  --color-danger-light: #FEE2E2;
+  --color-info: #6366F1;
+  --color-info-light: #E0E7FF;
+
+  /* 中性色 */
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+  --color-text-placeholder: #9CA3AF;
+  --color-text-white: #FFFFFF;
+  --color-border: #E5E7EB;
+  --color-border-light: #F3F4F6;
+  --color-bg-page: #F3F4F6;
+  --color-bg-card: #FFFFFF;
+  --color-bg-hover: #F9FAFB;
+
+  /* 状态色 - 业务状态 */
+  --status-pending: #F59E0B;
+  --status-pending-bg: #FFFBEB;
+  --status-in-progress: #3B82F6;
+  --status-in-progress-bg: #EFF6FF;
+  --status-completed: #10B981;
+  --status-completed-bg: #ECFDF5;
+  --status-abnormal: #EF4444;
+  --status-abnormal-bg: #FEF2F2;
+  --status-frozen: #8B5CF6;
+  --status-frozen-bg: #F5F3FF;
+
+  /* 角色色 */
+  --role-admin: #1A56DB;
+  --role-supplier: #059669;
+  --role-logistics: #D97706;
+  --role-warehouse: #7C3AED;
+
+  /* 间距 */
+  --spacing-xs: 8rpx;
+  --spacing-sm: 16rpx;
+  --spacing-md: 24rpx;
+  --spacing-lg: 32rpx;
+  --spacing-xl: 48rpx;
+
+  /* 圆角 */
+  --radius-sm: 8rpx;
+  --radius-md: 12rpx;
+  --radius-lg: 16rpx;
+  --radius-xl: 24rpx;
+  --radius-full: 999rpx;
+
+  /* 阴影 */
+  --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+
+  /* 字体 */
+  --font-size-xs: 22rpx;
+  --font-size-sm: 24rpx;
+  --font-size-base: 28rpx;
+  --font-size-md: 30rpx;
+  --font-size-lg: 32rpx;
+  --font-size-xl: 36rpx;
+  --font-size-2xl: 40rpx;
+  --font-size-3xl: 48rpx;
+
+  /* 页面基础样式 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-page);
+  line-height: 1.6;
+}
+
+/* ============================================
+   2. 通用布局类
+   ============================================ */
+.page-container {
+  padding: var(--spacing-md);
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.flex-row { display: flex; flex-direction: row; align-items: center; }
+.flex-col { display: flex; flex-direction: column; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-center { display: flex; justify-content: center; align-items: center; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-1 { flex: 1; }
+
+/* ============================================
+   3. 卡片组件
+   ============================================ */
+.card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.card-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.card-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: 4rpx;
+}
+
+/* ============================================
+   4. 状态徽章
+   ============================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 16rpx;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.badge-pending {
+  color: var(--status-pending);
+  background: var(--status-pending-bg);
+}
+
+.badge-in-progress {
+  color: var(--status-in-progress);
+  background: var(--status-in-progress-bg);
+}
+
+.badge-completed {
+  color: var(--status-completed);
+  background: var(--status-completed-bg);
+}
+
+.badge-abnormal {
+  color: var(--status-abnormal);
+  background: var(--status-abnormal-bg);
+}
+
+.badge-frozen {
+  color: var(--status-frozen);
+  background: var(--status-frozen-bg);
+}
+
+/* ============================================
+   5. 按钮
+   ============================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx 32rpx;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  border: none;
+  line-height: 1.5;
+  transition: opacity 0.2s;
+}
+
+.btn::after { border: none; }
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-text-white);
+}
+
+.btn-primary:active { opacity: 0.85; }
+
+.btn-success {
+  background: var(--color-success);
+  color: var(--color-text-white);
+}
+
+.btn-warning {
+  background: var(--color-warning);
+  color: var(--color-text-white);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: var(--color-text-white);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-primary);
+  border: 2rpx solid var(--color-primary);
+}
+
+.btn-ghost {
+  background: var(--color-primary-lighter);
+  color: var(--color-primary);
+}
+
+.btn-block {
+  display: flex;
+  width: 100%;
+}
+
+.btn-lg {
+  padding: 24rpx 48rpx;
+  font-size: var(--font-size-lg);
+  border-radius: var(--radius-lg);
+}
+
+.btn-sm {
+  padding: 8rpx 20rpx;
+  font-size: var(--font-size-sm);
+}
+
+/* ============================================
+   6. 表单元素
+   ============================================ */
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-label {
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+  display: block;
+}
+
+.form-label-required::before {
+  content: '*';
+  color: var(--color-danger);
+  margin-right: 4rpx;
+}
+
+.form-input {
+  width: 100%;
+  padding: 20rpx 24rpx;
+  border: 2rpx solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  background: var(--color-bg-card);
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: var(--color-primary);
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 20rpx 24rpx;
+  border: 2rpx solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  min-height: 160rpx;
+  box-sizing: border-box;
+}
+
+/* ============================================
+   7. 列表项
+   ============================================ */
+.list-item {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-bg-card);
+  border-bottom: 1rpx solid var(--color-border-light);
+}
+
+.list-item:first-child {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.list-item:only-child {
+  border-radius: var(--radius-lg);
+}
+
+.list-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.list-item-title {
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.list-item-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: 4rpx;
+}
+
+.list-item-arrow::after {
+  content: '';
+  width: 16rpx;
+  height: 16rpx;
+  border-top: 3rpx solid var(--color-text-placeholder);
+  border-right: 3rpx solid var(--color-text-placeholder);
+  transform: rotate(45deg);
+  margin-left: var(--spacing-sm);
+}
+
+/* ============================================
+   8. 统计卡片
+   ============================================ */
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-value {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: 8rpx;
+  text-align: center;
+}
+
+/* ============================================
+   9. 小节标题
+   ============================================ */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: var(--spacing-lg) 0 var(--spacing-md);
+}
+
+.section-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  position: relative;
+  padding-left: 20rpx;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6rpx;
+  height: 28rpx;
+  background: var(--color-primary);
+  border-radius: 3rpx;
+}
+
+.section-more {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* ============================================
+   10. 空状态
+   ============================================ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 0;
+  color: var(--color-text-placeholder);
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: var(--spacing-md);
+}
+
+.empty-text {
+  font-size: var(--font-size-base);
+}
+
+/* ============================================
+   11. 标签页
+   ============================================ */
+.tabs {
+  display: flex;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: 6rpx;
+  margin-bottom: var(--spacing-md);
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  transition: all 0.3s;
+}
+
+.tab-item.active {
+  background: var(--color-primary);
+  color: var(--color-text-white);
+  font-weight: 500;
+}
+
+/* ============================================
+   12. 进度条
+   ============================================ */
+.progress-bar {
+  height: 12rpx;
+  background: var(--color-border-light);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+  transition: width 0.3s ease;
+}
+
+/* ============================================
+   13. 底部操作栏
+   ============================================ */
+.bottom-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
+  background: var(--color-bg-card);
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+/* ============================================
+   14. 信息行
+   ============================================ */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid var(--color-border-light);
+}
+
+.info-row:last-child { border-bottom: none; }
+
+.info-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  width: 160rpx;
+}
+
+.info-value {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  text-align: right;
+  flex: 1;
+}

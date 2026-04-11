@@ -1,0 +1,68 @@
+{
+  "pages": [
+    "pages/login/index",
+    "pages/home/admin/index",
+    "pages/home/supplier/index",
+    "pages/home/logistics/index",
+    "pages/home/warehouse/index",
+    "pages/product/list/index",
+    "pages/product/detail/index",
+    "pages/product/edit/index",
+    "pages/supplier-mgmt/list/index",
+    "pages/supplier-mgmt/detail/index",
+    "pages/contract/list/index",
+    "pages/contract/detail/index",
+    "pages/contract/create/index",
+    "pages/quality/list/index",
+    "pages/quality/detail/index",
+    "pages/shipping/list/index",
+    "pages/shipping/detail/index",
+    "pages/shipping/create/index",
+    "pages/shipping/confirm/index",
+    "pages/org/manage/index",
+    "pages/inventory/overview/index",
+    "pages/inventory/detail/index",
+    "pages/warehouse-ops/packing/index",
+    "pages/warehouse-ops/unpack/index",
+    "pages/warehouse-ops/outbound/index",
+    "pages/warehouse-ops/outbound-confirm/index",
+    "pages/notification/list/index",
+    "pages/agreement/index",
+    "pages/settings/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#1A56DB",
+    "navigationBarTitleText": "Zakkart 供应链",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F3F4F6",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#8C8C8C",
+    "selectedColor": "#1A56DB",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/home/admin/index",
+        "text": "工作台"
+      },
+      {
+        "pagePath": "pages/contract/list/index",
+        "text": "合同"
+      },
+      {
+        "pagePath": "pages/inventory/overview/index",
+        "text": "库存"
+      },
+      {
+        "pagePath": "pages/settings/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "usingComponents": {},
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

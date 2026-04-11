@@ -1,0 +1,44 @@
+<!--pages/home/logistics/index.wxml - 物流方首页-->
+<view class="page-container">
+  <view class="welcome-section">
+    <view class="welcome-left">
+      <text class="welcome-greeting">{{user.roleName}}</text>
+      <text class="welcome-name">{{user.name}} · {{user.org.name}}</text>
+    </view>
+  </view>
+
+  <view class="stats-row">
+    <view class="stat-card">
+      <text class="stat-value" style="color: #D97706">{{stats.pendingConfirm}}</text>
+      <text class="stat-label">待确认运单</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value" style="color: #059669">{{stats.completed}}</text>
+      <text class="stat-label">已完成</text>
+    </view>
+  </view>
+
+  <view class="section-header">
+    <text class="section-title">待确认运单</text>
+    <text class="section-more" bindtap="goToShipments">查看全部 ></text>
+  </view>
+
+  <view wx:for="{{pendingShipments}}" wx:key="id" class="card" bindtap="goToShipmentDetail" data-id="{{item.id}}">
+    <view class="flex-between" style="margin-bottom: 12rpx">
+      <text class="card-title">{{item.partName}}</text>
+      <view class="badge badge-pending">待确认</view>
+    </view>
+    <view class="info-row"><text class="info-label">供应商</text><text class="info-value">{{item.supplierName}}</text></view>
+    <view class="info-row"><text class="info-label">数量</text><text class="info-value">{{item.totalQty}} 件</text></view>
+    <view class="info-row"><text class="info-label">目的地</text><text class="info-value">{{item.toWarehouse}}</text></view>
+    <view class="info-row"><text class="info-label">发货日期</text><text class="info-value">{{item.shipDate}}</text></view>
+    <view style="margin-top: 20rpx">
+      <button class="btn btn-warning btn-block" catchtap="onConfirm" data-id="{{item.id}}">确认运单</button>
+    </view>
+  </view>
+
+  <view wx:if="{{pendingShipments.length === 0}}" class="empty-state">
+    <text class="empty-icon">✅</text>
+    <text class="empty-text">暂无待确认运单</text>
+  </view>
+</view>

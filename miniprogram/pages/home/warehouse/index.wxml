@@ -1,0 +1,77 @@
+<!--pages/home/warehouse/index.wxml - 组装厂/仓库首页-->
+<view class="page-container">
+  <view class="welcome-section">
+    <view class="welcome-left">
+      <text class="welcome-greeting">{{user.roleName}}</text>
+      <text class="welcome-name">{{user.name}} · {{user.org.name}}</text>
+    </view>
+  </view>
+
+  <view class="stats-row">
+    <view class="stat-card">
+      <text class="stat-value" style="color: #7C3AED">{{stats.pendingReceive}}</text>
+      <text class="stat-label">待收货</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value" style="color: #059669">{{stats.todayPacked}}</text>
+      <text class="stat-label">今日包装</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value" style="color: #D97706">{{stats.pendingOutbound}}</text>
+      <text class="stat-label">待出库</text>
+    </view>
+  </view>
+
+  <view class="section-header">
+    <text class="section-title">待收货确认</text>
+  </view>
+  <view wx:for="{{pendingReceive}}" wx:key="id" class="card" bindtap="goToShipmentDetail" data-id="{{item.id}}">
+    <view class="flex-between" style="margin-bottom: 12rpx">
+      <text class="card-title">{{item.partName}}</text>
+      <view class="badge badge-pending">待收货</view>
+    </view>
+    <view class="info-row"><text class="info-label">供应商</text><text class="info-value">{{item.supplierName}}</text></view>
+    <view class="info-row"><text class="info-label">数量</text><text class="info-value">{{item.totalQty}} 件</text></view>
+    <view class="info-row"><text class="info-label">发货日期</text><text class="info-value">{{item.shipDate}}</text></view>
+    <button class="btn btn-primary btn-block" style="margin-top: 20rpx" catchtap="onReceiveConfirm" data-id="{{item.id}}">确认收货</button>
+  </view>
+  <view wx:if="{{pendingReceive.length === 0}}" class="empty-state">
+    <text class="empty-icon">📦</text>
+    <text class="empty-text">暂无待收货运单</text>
+  </view>
+
+  <view class="section-header">
+    <text class="section-title">快捷操作</text>
+  </view>
+  <view class="quick-actions">
+    <view class="action-btn" bindtap="goToPacking">
+      <text class="action-icon">🔧</text>
+      <text class="action-label">包装记录</text>
+    </view>
+    <view class="action-btn" bindtap="goToUnpack">
+      <text class="action-icon">📂</text>
+      <text class="action-label">拆包记录</text>
+    </view>
+    <view class="action-btn" bindtap="goToOutbound">
+      <text class="action-icon">🚛</text>
+      <text class="action-label">出库录入</text>
+    </view>
+    <view class="action-btn" bindtap="goToInventory">
+      <text class="action-icon">📊</text>
+      <text class="action-label">库存查看</text>
+    </view>
+  </view>
+
+  <view class="section-header">
+    <text class="section-title">本仓库存概览</text>
+  </view>
+  <view class="card">
+    <view class="inventory-grid">
+      <view wx:for="{{inventoryItems}}" wx:key="skuCode" class="inventory-item {{item.isLow ? 'low-stock' : ''}}">
+        <text class="inv-sku">{{item.skuCode}}</text>
+        <text class="inv-qty {{item.isLow ? 'danger' : ''}}">{{item.qty}}</text>
+        <text class="inv-label">件</text>
+      </view>
+    </view>
+  </view>
+</view>
