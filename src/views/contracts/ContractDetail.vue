@@ -87,31 +87,12 @@
     <el-card shadow="never" class="section-card">
       <template #header>
         <div class="section-header-row">
-          <span class="section-title">执行摘要</span>
+          <span class="section-title">交付批次管理</span>
           <el-button v-if="canAddBatch" size="small" type="primary" @click="showBatchDialog = true">
             新增批次
           </el-button>
         </div>
       </template>
-      <div class="execution-overview">
-        <div class="summary-tile">
-          <span class="summary-label">结构化批次</span>
-          <strong class="summary-value">{{ executionSummary.batchCount }}</strong>
-        </div>
-        <div class="summary-tile">
-          <span class="summary-label">计划交付总量</span>
-          <strong class="summary-value">{{ executionSummary.totalPlannedQty.toLocaleString() }}</strong>
-        </div>
-        <div class="summary-tile">
-          <span class="summary-label">待生产配件</span>
-          <strong class="summary-value">{{ executionSummary.pendingProduction }}</strong>
-        </div>
-        <div class="summary-tile">
-          <span class="summary-label">下一交期</span>
-          <strong class="summary-value">{{ executionSummary.nextPlannedDate }}</strong>
-        </div>
-      </div>
-
       <div v-if="batches.length === 0" class="empty-hint">
         暂无结构化交付批次。签署并上传已签合同后，系统会按合同交付表自动生成批次；如需提前维护，也可以手动新增。
       </div>
@@ -244,20 +225,6 @@ const canUploadSigned = computed(() => ['DRAFT', 'PENDING_SIGN'].includes(contra
 const canPushConfirm = computed(() => ['DRAFT', 'PENDING_SIGN'].includes(contract.value.status) && contract.value.supplier_confirm_status !== 'CONFIRMED')
 const canAddBatch = computed(() => ['DRAFT', 'PENDING_SIGN', 'SIGNED', 'EXECUTING'].includes(contract.value.status))
 const contractPartRows = computed(() => getContractPartRows(contract.value))
-const executionSummary = computed(() => {
-  const allParts = batches.value.flatMap(batch => batch.parts || [])
-  const nextPlannedDate = batches.value
-    .map(batch => batch.planned_date)
-    .filter(Boolean)
-    .sort()[0]
-
-  return {
-    batchCount: batches.value.length,
-    totalPlannedQty: batches.value.reduce((sum, batch) => sum + getBatchTotalQty(batch), 0),
-    pendingProduction: allParts.filter(part => part.status === 'PENDING_PRODUCTION').length,
-    nextPlannedDate: nextPlannedDate || '-'
-  }
-})
 
 function isBatchDeletable(batch) {
   return (batch.parts || []).every(p => p.status === 'PENDING_PRODUCTION')
@@ -555,28 +522,6 @@ onMounted(() => {
 .plain-hint {
   color: var(--el-text-color-secondary);
   line-height: 1.8;
-}
-.execution-overview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.summary-tile {
-  padding: 14px 16px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 10px;
-  background: var(--el-fill-color-lighter);
-}
-.summary-label {
-  display: block;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-.summary-value {
-  display: block;
-  margin-top: 6px;
-  font-size: 22px;
 }
 .batch-summary-list {
   display: grid;

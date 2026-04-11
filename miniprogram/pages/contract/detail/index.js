@@ -5,20 +5,7 @@ const { getContractStatusLabel, getContractStatusClass, getSupplierConfirmStatus
 
 Page({
   data: {
-    contract: {
-      execution: {
-        hasBatches: false,
-        batchCount: 0,
-        totalPlannedQty: '0',
-        nextPlannedDate: '--',
-        pendingProductionCount: 0,
-        pendingInspectionCount: 0,
-        pendingShipmentCount: 0,
-        transitCount: 0,
-        arrivedCount: 0,
-        hint: ''
-      }
-    },
+    contract: {},
     isSupplier: false,
     isAdmin: false,
     isSupplierWorker: false,
@@ -72,8 +59,7 @@ Page({
           supplierConfirmedAt: formatDateTime(contract.supplier_confirmed_at),
           canConfirm: contract.status === 'PENDING_SIGN' && contract.supplier_confirm_status !== 'CONFIRMED',
           signedPdfFileId: contract.signed_pdf_file_id || '',
-          document: buildContractDocument(contract),
-          execution: buildExecutionSummary(batches)
+          document: buildContractDocument(contract)
         },
         isSupplier: role === 'supplier',
         isAdmin: role === 'admin',
@@ -86,14 +72,6 @@ Page({
     } catch (error) {
       showToast(error.message || '加载合同详情失败')
     }
-  },
-
-  onGoToProduction() {
-    wx.navigateTo({ url: '/pages/quality/list/index' })
-  },
-
-  onGoToShipping() {
-    wx.navigateTo({ url: '/pages/shipping/list/index' })
   },
 
   async onConfirmContract() {
@@ -138,47 +116,6 @@ function getContractTotalQty(contract) {
   }
 
   return (contract.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
-}
-
-function buildExecutionSummary(batches = []) {
-  const counts = {
-    PENDING_PRODUCTION: 0,
-    PENDING_INSPECTION: 0,
-    PENDING_SHIPMENT: 0,
-    VEHICLE_DISPATCHED: 0,
-    IN_TRANSIT: 0,
-    ARRIVED: 0
-  }
-
-  let totalPlannedQty = 0
-  batches.forEach((batch) => {
-    ;(batch.parts || []).forEach((part) => {
-      totalPlannedQty += Number(part.planned_qty || 0)
-      if (counts[part.status] != null) {
-        counts[part.status] += 1
-      }
-    })
-  })
-
-  const nextPlannedDate = batches
-    .map(batch => batch.planned_date)
-    .filter(Boolean)
-    .sort()[0] || '--'
-
-  return {
-    hasBatches: batches.length > 0,
-    batchCount: batches.length,
-    totalPlannedQty: formatNumber(totalPlannedQty),
-    nextPlannedDate,
-    pendingProductionCount: counts.PENDING_PRODUCTION,
-    pendingInspectionCount: counts.PENDING_INSPECTION,
-    pendingShipmentCount: counts.PENDING_SHIPMENT,
-    transitCount: counts.VEHICLE_DISPATCHED + counts.IN_TRANSIT,
-    arrivedCount: counts.ARRIVED,
-    hint: batches.length > 0
-      ? '合同页只保留正文与签署文件，具体生产、验货和发货动作统一在业务模块中处理。'
-      : '当前还没有结构化批次。PC 端补全交付日期与数量并上传已签合同后，系统会自动生成待执行批次。'
-  }
 }
 
 function buildContractDocument(contract) {

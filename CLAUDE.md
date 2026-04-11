@@ -225,9 +225,10 @@
 - 地址中心继续收敛：后台已移除独立 `/addresses` 路由入口，正式维护路径仅保留“供应商详情 -> 地址管理”和“物流与发货 -> 货代地址维护”
 - 后端辅助：`cloudfunctions/api/utils/contract-document.js`、`routes/contract.js`、`routes/order.js`、`routes/organization.js`、`routes/partType.js` 已补合同全文、供应商映射、配件全量保存支持
 - 状态链路补强：`cloudfunctions/api/routes/contract.js` 在上传已签合同后，若存在有效交付计划，将自动生成 `delivery_batches`
+- 批次回填补强：`cloudfunctions/api/routes/batch.js` 在读取已签/执行中合同的批次列表时，若发现历史合同缺失 `delivery_batches`，会按合同交付表自动补建一次，避免供应商生产链路断档
 - 小程序正式化收口：`miniprogram/app.js`、`utils/role.js`、`pages/settings/*`、各首页已移除原型角色切换与 mock fallback
 - 部署文件：`deploy-packages/api-cloudfunction.zip` 需随最新代码重新打包上传
-- 合同展示第二轮收口：PC 合同详情已移除重复的“合同明细”表格，改为“合同原文 + 执行摘要”；小程序合同详情已移除底部重复批次卡片，改为执行摘要与业务模块跳转入口
+- 合同展示第二轮收口：PC 合同详情已移除重复的“合同明细”表格；小程序合同详情不再额外展示重复的批次摘要，合同页只保留合同确认、合同原文与已签 PDF 查阅
 - 合同数量显示修正：小程序合同列表、供应商首页、管理员首页、合同详情已优先读取 `product_items.total_qty`，避免旧 `contract.items` 缺失时出现总量为空或 0
 
 ### 联调结论（2026-04-06）
