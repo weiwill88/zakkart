@@ -1,11 +1,24 @@
 const { callApi } = require('../../../utils/api')
 const { calcProgress, formatNumber, showToast } = require('../../../utils/util')
 const { openDocumentUrl } = require('../../../utils/cloud')
-const { getContractStatusLabel, getContractStatusClass, getSupplierConfirmStatusLabel, getSupplierConfirmStatusClass, getPartStatusLabel, getPartStatusClass } = require('../../../utils/status')
+const { getContractStatusLabel, getContractStatusClass, getSupplierConfirmStatusLabel, getSupplierConfirmStatusClass } = require('../../../utils/status')
 
 Page({
   data: {
-    contract: {},
+    contract: {
+      execution: {
+        hasBatches: false,
+        batchCount: 0,
+        totalPlannedQty: '0',
+        nextPlannedDate: '--',
+        pendingProductionCount: 0,
+        pendingInspectionCount: 0,
+        pendingShipmentCount: 0,
+        transitCount: 0,
+        arrivedCount: 0,
+        hint: ''
+      }
+    },
     isSupplier: false,
     isAdmin: false,
     isSupplierWorker: false,
@@ -31,7 +44,7 @@ Page({
       ])
 
       const batches = batchResult.list || []
-      const totalQty = (contract.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
+      const totalQty = getContractTotalQty(contract)
       const deliveredQty = batches.reduce((sum, batch) => {
         return sum + (batch.parts || []).reduce((partSum, part) => {
           if (['PENDING_SHIPMENT', 'VEHICLE_DISPATCHED', 'IN_TRANSIT', 'ARRIVED'].includes(part.status)) {
@@ -60,21 +73,7 @@ Page({
           canConfirm: contract.status === 'PENDING_SIGN' && contract.supplier_confirm_status !== 'CONFIRMED',
           signedPdfFileId: contract.signed_pdf_file_id || '',
           document: buildContractDocument(contract),
-          batches: batches.map(batch => ({
-            id: batch._id,
-            batchNo: `第 ${batch.batch_no} 批`,
-            planDate: batch.planned_date,
-            parts: (batch.parts || []).map(part => ({
-              id: part.part_id,
-              name: part.part_name,
-              planQty: formatNumber(part.planned_qty),
-              actualQty: formatNumber(part.actual_qty || 0),
-              rawPlanQty: Number(part.planned_qty || 0),
-              status: part.status,
-              statusLabel: getPartStatusLabel(part.status),
-              badgeClass: getPartStatusClass(part.status)
-            }))
-          }))
+          execution: buildExecutionSummary(batches)
         },
         isSupplier: role === 'supplier',
         isAdmin: role === 'admin',
@@ -89,39 +88,12 @@ Page({
     }
   },
 
-  onMarkProduced(e) {
-    if (!this.data.canMarkProduced) {
-      showToast('当前账号没有标记已生产权限')
-      return
-    }
-    const { partId, qty } = e.currentTarget.dataset
-    wx.showModal({
-      title: '确认标记',
-      content: '标记后将进入待验货状态，等待甲方提交验货结果。',
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          await callApi('status.markProduced', {
-            batchPartId: partId,
-            actualQty: Number(qty || 0)
-          })
-          showToast('已标记为待验货', 'success')
-          this.loadData()
-        } catch (error) {
-          showToast(error.message || '操作失败')
-        }
-      }
-    })
+  onGoToProduction() {
+    wx.navigateTo({ url: '/pages/quality/list/index' })
   },
 
-  onCreateShipment(e) {
-    if (!this.data.canCreateShipment) {
-      showToast('当前账号没有创建发货单权限')
-      return
-    }
-    const partId = e.currentTarget.dataset.partId || ''
-    const suffix = partId ? `?batchPartId=${partId}` : ''
-    wx.navigateTo({ url: `/pages/shipping/create/index${suffix}` })
+  onGoToShipping() {
+    wx.navigateTo({ url: '/pages/shipping/list/index' })
   },
 
   async onConfirmContract() {
@@ -157,6 +129,56 @@ function formatDate(value) {
 function formatDateTime(value) {
   if (!value) return '--'
   return String(value).slice(0, 16).replace('T', ' ')
+}
+
+function getContractTotalQty(contract) {
+  const productItems = Array.isArray(contract.product_items) ? contract.product_items : []
+  if (productItems.length > 0) {
+    return productItems.reduce((sum, item) => sum + Number(item.total_qty || 0), 0)
+  }
+
+  return (contract.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
+}
+
+function buildExecutionSummary(batches = []) {
+  const counts = {
+    PENDING_PRODUCTION: 0,
+    PENDING_INSPECTION: 0,
+    PENDING_SHIPMENT: 0,
+    VEHICLE_DISPATCHED: 0,
+    IN_TRANSIT: 0,
+    ARRIVED: 0
+  }
+
+  let totalPlannedQty = 0
+  batches.forEach((batch) => {
+    ;(batch.parts || []).forEach((part) => {
+      totalPlannedQty += Number(part.planned_qty || 0)
+      if (counts[part.status] != null) {
+        counts[part.status] += 1
+      }
+    })
+  })
+
+  const nextPlannedDate = batches
+    .map(batch => batch.planned_date)
+    .filter(Boolean)
+    .sort()[0] || '--'
+
+  return {
+    hasBatches: batches.length > 0,
+    batchCount: batches.length,
+    totalPlannedQty: formatNumber(totalPlannedQty),
+    nextPlannedDate,
+    pendingProductionCount: counts.PENDING_PRODUCTION,
+    pendingInspectionCount: counts.PENDING_INSPECTION,
+    pendingShipmentCount: counts.PENDING_SHIPMENT,
+    transitCount: counts.VEHICLE_DISPATCHED + counts.IN_TRANSIT,
+    arrivedCount: counts.ARRIVED,
+    hint: batches.length > 0
+      ? '合同页只保留正文与签署文件，具体生产、验货和发货动作统一在业务模块中处理。'
+      : '当前还没有结构化批次。PC 端补全交付日期与数量并上传已签合同后，系统会自动生成待执行批次。'
+  }
 }
 
 function buildContractDocument(contract) {

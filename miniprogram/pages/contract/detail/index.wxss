@@ -14,15 +14,16 @@
 .batch-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20rpx; }
 .batch-no { font-size: var(--font-size-base); font-weight: 600; display: block; }
 .batch-date { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; margin-top: 4rpx; }
-.variant-table { border: 1rpx solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
-.variant-header { display: flex; background: var(--color-bg-page); padding: 12rpx 16rpx; }
-.variant-row { display: flex; padding: 12rpx 16rpx; border-top: 1rpx solid var(--color-border-light); }
-.variant-col { font-size: var(--font-size-sm); }
-.variant-col.name { flex: 2; }
-.variant-col.qty { flex: 1; text-align: center; }
-.variant-header .variant-col { font-weight: 500; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
-.diff-highlight { color: var(--color-danger); font-weight: 600; }
 .batch-actions { margin-top: 20rpx; }
+.execution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20rpx; }
+.execution-cell { padding: 20rpx; border-radius: 20rpx; background: #f8fafc; }
+.execution-label { display: block; font-size: 22rpx; color: var(--color-text-secondary); }
+.execution-value { display: block; margin-top: 8rpx; font-size: 34rpx; font-weight: 700; color: var(--color-text-primary); }
+.execution-hint { display: block; margin-top: 20rpx; font-size: 24rpx; line-height: 1.7; color: var(--color-text-secondary); }
+.status-pill-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16rpx; margin-top: 20rpx; }
+.status-pill { padding: 18rpx 20rpx; border-radius: 18rpx; border: 1rpx solid var(--color-border-light); background: #fff; }
+.status-pill-label { display: block; font-size: 22rpx; color: var(--color-text-secondary); }
+.status-pill-value { display: block; margin-top: 6rpx; font-size: 30rpx; font-weight: 600; }
 
 .document-card { padding: 32rpx !important; }
 .document-title-row { margin-bottom: 24rpx; }

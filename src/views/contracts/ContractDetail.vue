@@ -77,61 +77,75 @@
       />
     </el-card>
 
-    <!-- Contract Items -->
     <el-card shadow="never" class="section-card">
-      <template #header><span class="section-title">合同明细</span></template>
-      <el-table :data="contract.items || []" border>
-        <el-table-column prop="sku_spec" label="SKU 规格" width="200" />
-        <el-table-column prop="part_name" label="配件名称" />
-        <el-table-column label="数量" width="120" align="right">
-          <template #default="{ row }">{{ (row.quantity || 0).toLocaleString() }}</template>
-        </el-table-column>
-        <el-table-column label="单价 (元)" width="150">
-          <template #default="{ row }">
-            <span>{{ row.unit_price != null ? row.unit_price.toFixed(2) : '-' }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="金额 (元)" width="130" align="right">
-          <template #default="{ row }">{{ (row.amount || 0).toLocaleString() }}</template>
-        </el-table-column>
-      </el-table>
+      <template #header><span class="section-title">展示说明</span></template>
+      <div class="plain-hint">
+        合同正文已经包含采购货物说明、规格说明和交付表。这里不再重复展示同一份内容，避免出现空白字段与多处不一致。
+      </div>
     </el-card>
 
-    <!-- Delivery Batches -->
     <el-card shadow="never" class="section-card">
       <template #header>
         <div class="section-header-row">
-          <span class="section-title">交付计划</span>
+          <span class="section-title">执行摘要</span>
           <el-button v-if="canAddBatch" size="small" type="primary" @click="showBatchDialog = true">
             新增批次
           </el-button>
         </div>
       </template>
-      <div v-if="batches.length === 0" class="empty-hint">暂无交付批次</div>
-      <div v-for="batch in batches" :key="batch._id" class="batch-block">
-        <div class="batch-header">
-          <span class="batch-title">批次 {{ batch.batch_no }} — {{ batch.planned_date }}</span>
-          <span class="batch-actions">
-            <el-button text size="small" @click="openEditBatch(batch)">编辑</el-button>
-            <el-popconfirm title="确定删除该批次？" @confirm="handleDeleteBatch(batch._id)">
-              <template #reference>
-                <el-button text size="small" type="danger" :disabled="!isBatchDeletable(batch)">删除</el-button>
-              </template>
-            </el-popconfirm>
-          </span>
+      <div class="execution-overview">
+        <div class="summary-tile">
+          <span class="summary-label">结构化批次</span>
+          <strong class="summary-value">{{ executionSummary.batchCount }}</strong>
         </div>
-        <el-table :data="batch.parts || []" border size="small">
-          <el-table-column prop="part_name" label="配件名称" />
-          <el-table-column prop="planned_qty" label="计划数量" width="120" align="right">
-            <template #default="{ row }">{{ (row.planned_qty || 0).toLocaleString() }}</template>
-          </el-table-column>
-          <el-table-column label="状态" width="120">
-            <template #default="{ row }">
-              <el-tag :type="goodsStatusTagType(row.status)" size="small">{{ goodsStatusLabel(row.status) }}</el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
-        <div v-if="batch.note" class="batch-note">备注：{{ batch.note }}</div>
+        <div class="summary-tile">
+          <span class="summary-label">计划交付总量</span>
+          <strong class="summary-value">{{ executionSummary.totalPlannedQty.toLocaleString() }}</strong>
+        </div>
+        <div class="summary-tile">
+          <span class="summary-label">待生产配件</span>
+          <strong class="summary-value">{{ executionSummary.pendingProduction }}</strong>
+        </div>
+        <div class="summary-tile">
+          <span class="summary-label">下一交期</span>
+          <strong class="summary-value">{{ executionSummary.nextPlannedDate }}</strong>
+        </div>
+      </div>
+
+      <div v-if="batches.length === 0" class="empty-hint">
+        暂无结构化交付批次。签署并上传已签合同后，系统会按合同交付表自动生成批次；如需提前维护，也可以手动新增。
+      </div>
+      <div v-else class="batch-summary-list">
+        <div v-for="batch in batches" :key="batch._id" class="batch-summary-card">
+          <div class="batch-header">
+            <div>
+              <span class="batch-title">批次 {{ batch.batch_no }} — {{ batch.planned_date || '-' }}</span>
+              <div class="batch-meta">
+                <span>配件 {{ (batch.parts || []).length }} 项</span>
+                <span>计划总量 {{ getBatchTotalQty(batch).toLocaleString() }}</span>
+              </div>
+            </div>
+            <span class="batch-actions">
+              <el-button text size="small" @click="openEditBatch(batch)">编辑</el-button>
+              <el-popconfirm title="确定删除该批次？" @confirm="handleDeleteBatch(batch._id)">
+                <template #reference>
+                  <el-button text size="small" type="danger" :disabled="!isBatchDeletable(batch)">删除</el-button>
+                </template>
+              </el-popconfirm>
+            </span>
+          </div>
+          <div class="status-chip-row">
+            <el-tag
+              v-for="statusItem in getBatchStatusSummary(batch)"
+              :key="`${batch._id}-${statusItem.key}`"
+              :type="statusItem.type"
+              size="small"
+            >
+              {{ statusItem.label }} {{ statusItem.count }}
+            </el-tag>
+          </div>
+          <div v-if="batch.note" class="batch-note">备注：{{ batch.note }}</div>
+        </div>
       </div>
     </el-card>
 
@@ -229,9 +243,47 @@ const canExport = computed(() => ['DRAFT', 'PENDING_SIGN'].includes(contract.val
 const canUploadSigned = computed(() => ['DRAFT', 'PENDING_SIGN'].includes(contract.value.status))
 const canPushConfirm = computed(() => ['DRAFT', 'PENDING_SIGN'].includes(contract.value.status) && contract.value.supplier_confirm_status !== 'CONFIRMED')
 const canAddBatch = computed(() => ['DRAFT', 'PENDING_SIGN', 'SIGNED', 'EXECUTING'].includes(contract.value.status))
+const contractPartRows = computed(() => getContractPartRows(contract.value))
+const executionSummary = computed(() => {
+  const allParts = batches.value.flatMap(batch => batch.parts || [])
+  const nextPlannedDate = batches.value
+    .map(batch => batch.planned_date)
+    .filter(Boolean)
+    .sort()[0]
+
+  return {
+    batchCount: batches.value.length,
+    totalPlannedQty: batches.value.reduce((sum, batch) => sum + getBatchTotalQty(batch), 0),
+    pendingProduction: allParts.filter(part => part.status === 'PENDING_PRODUCTION').length,
+    nextPlannedDate: nextPlannedDate || '-'
+  }
+})
 
 function isBatchDeletable(batch) {
   return (batch.parts || []).every(p => p.status === 'PENDING_PRODUCTION')
+}
+
+function getBatchTotalQty(batch) {
+  return (batch.parts || []).reduce((sum, part) => sum + Number(part.planned_qty || 0), 0)
+}
+
+function getBatchStatusSummary(batch) {
+  const counts = new Map()
+  ;(batch.parts || []).forEach((part) => {
+    const key = part.status || 'UNKNOWN'
+    counts.set(key, (counts.get(key) || 0) + 1)
+  })
+
+  if (counts.size === 0) {
+    return [{ key: 'empty', label: '暂无配件', count: 0, type: 'info' }]
+  }
+
+  return Array.from(counts.entries()).map(([key, count]) => ({
+    key,
+    label: goodsStatusLabel(key),
+    count,
+    type: goodsStatusTagType(key)
+  }))
 }
 
 async function loadContract() {
@@ -390,7 +442,7 @@ async function handleSaveBatch() {
       // Create new batch - use contract items as default parts
       const parts = batchForm.value.parts.length > 0
         ? batchForm.value.parts
-        : (contract.value.items || []).map(item => ({
+        : contractPartRows.value.map(item => ({
             part_type_id: item.part_type_id,
             part_name: item.part_name,
             planned_qty: 0
@@ -426,10 +478,25 @@ async function handleDeleteBatch(id) {
 
 // Initialize batch form when opening new batch dialog
 function initNewBatchParts() {
-  batchForm.value.parts = (contract.value.items || []).map(item => ({
+  batchForm.value.parts = contractPartRows.value.map(item => ({
     part_type_id: item.part_type_id,
     part_name: item.part_name,
     planned_qty: 0
+  }))
+}
+
+function getContractPartRows(contractData = {}) {
+  const productItems = Array.isArray(contractData.product_items) ? contractData.product_items : []
+  if (productItems.length > 0) {
+    return productItems.map(item => ({
+      part_type_id: item.part_type_id || '',
+      part_name: item.part_name || item.model || '未命名配件'
+    }))
+  }
+
+  return (contractData.items || []).map(item => ({
+    part_type_id: item.part_type_id || '',
+    part_name: item.part_name || item.sku_spec || '未命名配件'
   }))
 }
 
@@ -485,27 +552,72 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
 }
-.batch-block {
-  margin-bottom: 20px;
+.plain-hint {
+  color: var(--el-text-color-secondary);
+  line-height: 1.8;
+}
+.execution-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.summary-tile {
+  padding: 14px 16px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 10px;
+  background: var(--el-fill-color-lighter);
+}
+.summary-label {
+  display: block;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+.summary-value {
+  display: block;
+  margin-top: 6px;
+  font-size: 22px;
+}
+.batch-summary-list {
+  display: grid;
+  gap: 12px;
+}
+.batch-summary-card {
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 10px;
+  padding: 14px 16px;
 }
 .batch-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
+  gap: 12px;
 }
 .batch-title {
   font-weight: 600;
   font-size: 14px;
 }
+.batch-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+.status-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .batch-note {
   margin-top: 6px;
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--el-text-color-secondary);
 }
 .empty-hint {
   padding: 20px;
-  color: var(--color-text-secondary);
+  color: var(--el-text-color-secondary);
   text-align: center;
 }
 </style>

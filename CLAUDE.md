@@ -222,10 +222,13 @@
 - 主数据调整：`admin/src/views/parts/PartTypeList.vue` 已支持配件维度扩展与全量编辑；`admin/src/layouts/AdminLayout.vue` 已调整“基础资料”菜单顺序
 - 供应商信息增强：`admin/src/views/suppliers/SupplierDetail.vue` 已支持原材料维护，合同默认从供应商基础工商/财务信息映射乙方信息与收款账户
 - 地址入口调整：`admin/src/views/addresses/AddressList.vue` 改为可按路由锁定类型，新增 `货代地址维护` 入口复用同一套 `addresses` 数据
+- 地址中心继续收敛：后台已移除独立 `/addresses` 路由入口，正式维护路径仅保留“供应商详情 -> 地址管理”和“物流与发货 -> 货代地址维护”
 - 后端辅助：`cloudfunctions/api/utils/contract-document.js`、`routes/contract.js`、`routes/order.js`、`routes/organization.js`、`routes/partType.js` 已补合同全文、供应商映射、配件全量保存支持
 - 状态链路补强：`cloudfunctions/api/routes/contract.js` 在上传已签合同后，若存在有效交付计划，将自动生成 `delivery_batches`
 - 小程序正式化收口：`miniprogram/app.js`、`utils/role.js`、`pages/settings/*`、各首页已移除原型角色切换与 mock fallback
 - 部署文件：`deploy-packages/api-cloudfunction.zip` 需随最新代码重新打包上传
+- 合同展示第二轮收口：PC 合同详情已移除重复的“合同明细”表格，改为“合同原文 + 执行摘要”；小程序合同详情已移除底部重复批次卡片，改为执行摘要与业务模块跳转入口
+- 合同数量显示修正：小程序合同列表、供应商首页、管理员首页、合同详情已优先读取 `product_items.total_qty`，避免旧 `contract.items` 缺失时出现总量为空或 0
 
 ### 联调结论（2026-04-06）
 

@@ -194,41 +194,56 @@
     </view>
   </view>
 
-  <!-- 批次列表 -->
   <view class="section-header">
-    <text class="section-title">交付批次</text>
+    <text class="section-title">执行摘要</text>
   </view>
-
-  <view wx:for="{{contract.batches}}" wx:key="id" class="card batch-card">
-    <view class="batch-header">
-      <view>
-        <text class="batch-no">{{item.batchNo}}</text>
-        <text class="batch-date">计划交付：{{item.planDate}}</text>
+  <view class="card batch-card">
+    <view class="execution-grid">
+      <view class="execution-cell">
+        <text class="execution-label">结构化批次</text>
+        <text class="execution-value">{{contract.execution.batchCount}}</text>
+      </view>
+      <view class="execution-cell">
+        <text class="execution-label">计划交付总量</text>
+        <text class="execution-value">{{contract.execution.totalPlannedQty}}</text>
+      </view>
+      <view class="execution-cell">
+        <text class="execution-label">下一交期</text>
+        <text class="execution-value">{{contract.execution.nextPlannedDate}}</text>
+      </view>
+      <view class="execution-cell">
+        <text class="execution-label">待生产</text>
+        <text class="execution-value">{{contract.execution.pendingProductionCount}}</text>
       </view>
     </view>
 
-    <!-- 配件明细 -->
-    <view class="variant-table">
-      <view class="variant-header">
-        <text class="variant-col name">配件</text>
-        <text class="variant-col qty">计划</text>
-        <text class="variant-col qty">实际</text>
-        <text class="variant-col qty">状态</text>
+    <text class="execution-hint">{{contract.execution.hint}}</text>
+
+    <view wx:if="{{contract.execution.hasBatches}}" class="status-pill-row">
+      <view class="status-pill">
+        <text class="status-pill-label">待验货</text>
+        <text class="status-pill-value">{{contract.execution.pendingInspectionCount}}</text>
       </view>
-      <view wx:for="{{item.parts}}" wx:for-item="part" wx:key="id" class="variant-row">
-        <text class="variant-col name">{{part.name}}</text>
-        <text class="variant-col qty">{{part.planQty}}</text>
-        <text class="variant-col qty">{{part.actualQty}}</text>
-        <text class="variant-col qty">{{part.statusLabel}}</text>
+      <view class="status-pill">
+        <text class="status-pill-label">待发货</text>
+        <text class="status-pill-value">{{contract.execution.pendingShipmentCount}}</text>
+      </view>
+      <view class="status-pill">
+        <text class="status-pill-label">运输中</text>
+        <text class="status-pill-value">{{contract.execution.transitCount}}</text>
+      </view>
+      <view class="status-pill">
+        <text class="status-pill-label">已到达</text>
+        <text class="status-pill-value">{{contract.execution.arrivedCount}}</text>
       </view>
     </view>
 
-    <view wx:for="{{item.parts}}" wx:for-item="part" wx:key="id" class="batch-actions">
-      <button wx:if="{{isSupplier && canMarkProduced && part.status === 'PENDING_PRODUCTION'}}" class="btn btn-success btn-block" catchtap="onMarkProduced" data-part-id="{{part.id}}" data-qty="{{part.rawPlanQty}}">
-        标记 {{part.name}} 已生产待验货
+    <view class="batch-actions">
+      <button wx:if="{{contract.execution.hasBatches}}" class="btn btn-outline btn-block" bindtap="onGoToProduction">
+        查看生产与验货状态
       </button>
-      <button wx:if="{{isSupplier && canCreateShipment && part.status === 'PENDING_SHIPMENT'}}" class="btn btn-primary btn-block" catchtap="onCreateShipment" data-part-id="{{part.id}}">
-        为 {{part.name}} 创建发货单
+      <button wx:if="{{contract.execution.pendingShipmentCount > 0 && canCreateShipment}}" class="btn btn-primary btn-block" bindtap="onGoToShipping">
+        去发货物流处理待发货
       </button>
     </view>
   </view>

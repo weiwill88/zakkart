@@ -44,7 +44,7 @@ Page({
 
       const supplierProgress = executingContracts.map((contract, index) => {
         const batches = batchResults[index].list || []
-        const totalQty = (contract.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
+        const totalQty = getContractTotalQty(contract)
         const deliveredQty = batches.reduce((sum, batch) => {
           return sum + (batch.parts || []).reduce((partSum, part) => {
             if (['PENDING_SHIPMENT', 'VEHICLE_DISPATCHED', 'IN_TRANSIT', 'ARRIVED'].includes(part.status)) {
@@ -180,4 +180,13 @@ function buildTodoItems(contracts, inspectionList) {
   }
 
   return list
+}
+
+function getContractTotalQty(contract) {
+  const productItems = Array.isArray(contract.product_items) ? contract.product_items : []
+  if (productItems.length > 0) {
+    return productItems.reduce((sum, item) => sum + Number(item.total_qty || 0), 0)
+  }
+
+  return (contract.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
 }
