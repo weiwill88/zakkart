@@ -46,7 +46,9 @@ Page({
 
     try {
       const [contractResult, inspectionResult] = await Promise.all([
-        callApi('contract.list', { page: 1, pageSize: 100 }),
+        moduleAccess.contract
+          ? callApi('contract.list', { page: 1, pageSize: 100 })
+          : Promise.resolve({ list: [] }),
         callApi('inspection.list', { status: 'all' })
       ])
 

@@ -46,6 +46,7 @@ export async function callCloudFunction(name, data) {
 }
 
 export async function uploadCloudFile({ cloudPath, file }) {
+  await ensureAnonymousAccess()
   const app = getCloudbaseApp()
   try {
     return await app.uploadFile({
@@ -139,6 +140,16 @@ function normalizeCloudbaseError(error) {
     )
     wrapped.cause = error
     wrapped.code = error?.code || 'NETWORK_REQUEST_ERROR'
+    return wrapped
+  }
+
+  if (
+    normalizedMessage.includes('operation_fail')
+    && normalizedMessage.includes('storage')
+  ) {
+    const wrapped = new Error('CloudBase 云存储上传失败。请检查当前环境的云存储权限、匿名登录状态、Web 安全域名，以及文件路径是否允许写入。')
+    wrapped.cause = error
+    wrapped.code = error?.code || 'STORAGE_OPERATION_FAIL'
     return wrapped
   }
 

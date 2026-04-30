@@ -140,7 +140,8 @@ import { buildContractWord } from '../../utils/contractWord'
 import {
   buildContractUpdatePayload,
   createContractDraftFromGenerated,
-  ensureContractShape
+  ensureContractShape,
+  validateDeliveryTotals
 } from '../../utils/contractDocument'
 import { getContractStatusLabel, getContractStatusTagType, getSupplierConfirmStatusLabel, getSupplierConfirmStatusTagType } from '../../utils/status'
 import { saveAs } from 'file-saver'
@@ -294,6 +295,7 @@ async function saveContract(index, showMessage = true) {
 
   savingMap.value = { ...savingMap.value, [c._savedId]: true }
   try {
+    validateDeliveryTotals(c)
     const updatedContract = await updateContract(c._savedId, buildContractUpdatePayload(c))
     applyContractState(c, updatedContract)
     if (showMessage) {
@@ -350,6 +352,12 @@ async function pushAllContracts() {
 // === Word export ===
 function exportContract(idx) {
   const c = contracts.value[idx]
+  try {
+    validateDeliveryTotals(c)
+  } catch (error) {
+    ElMessage.error(error.message || '交付计划数量不一致')
+    return
+  }
   const doc = buildContractWord(c)
   Packer.toBlob(doc).then(blob => {
     saveAs(blob, `${c.contractNo}.docx`)

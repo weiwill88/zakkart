@@ -3,6 +3,9 @@
   "version": "0.2.0",
   "private": true,
   "main": "index.js",
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.js\""
+  },
   "dependencies": {
     "wx-server-sdk": "~2.6.3"
   }

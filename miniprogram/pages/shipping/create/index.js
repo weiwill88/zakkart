@@ -1,5 +1,6 @@
 const { showToast } = require('../../../utils/util')
 const { callApi } = require('../../../utils/api')
+const { normalizeAddressOptions, resolveDestinationType } = require('../../../utils/shipping-form')
 
 Page({
   data: {
@@ -24,13 +25,14 @@ Page({
     const orgId = app.getUser()?.org?.id || ''
 
     try {
-      const [inspectionResult, ownAddressResult, orgDetail, contractResult, productResult] = await Promise.all([
+      const [inspectionResult, ownAddressResult, orgDetailResult, contractResult, productResult] = await Promise.all([
         callApi('inspection.list', { status: 'all' }),
         callApi('address.list', { page: 1, pageSize: 100, orgId }),
-        callApi('organization.detail', { id: orgId }),
+        callApi('organization.detail', { id: orgId }).catch(() => ({ _id: orgId, name: app.getUser()?.org?.name || '', has_assembly: false })),
         callApi('contract.list', { page: 1, pageSize: 200 }),
         callApi('product.list', { page: 1, pageSize: 200 })
       ])
+      const orgDetail = orgDetailResult || {}
 
       const contractMap = (contractResult.list || []).reduce((acc, item) => {
         acc[item._id] = item
@@ -56,14 +58,14 @@ Page({
           destinationType: resolveCandidateDestinationType(item, orgDetail, contractMap, productMap)
         }))
 
-      const ownAddresses = (ownAddressResult.list || []).filter(item => ['factory', 'assembly'].includes(item.type))
+      const ownAddresses = normalizeAddressOptions((ownAddressResult.list || []).filter(item => ['factory', 'assembly'].includes(item.type)))
       const selectedFromIndex = resolveDefaultFromIndex(ownAddresses, orgDetail)
       const destinationType = resolveDestinationType(candidates, orgDetail)
       const shippingOptionResult = await callApi('address.shippingOptions', {
         destinationType,
         excludeOrgId: orgId
       })
-      const toAddresses = shippingOptionResult.list || []
+      const toAddresses = normalizeAddressOptions(shippingOptionResult.list || [])
 
       this.setData({
         candidates,
@@ -130,7 +132,7 @@ Page({
       candidates,
       destinationType,
       destinationRuleText: buildDestinationRuleText(destinationType),
-      toAddresses: shippingOptionResult.list || [],
+      toAddresses: normalizeAddressOptions(shippingOptionResult.list || []),
       selectedToIndex: 0
     })
   },
@@ -163,8 +165,8 @@ Page({
     this.setData({ submitting: true })
     try {
       const result = await callApi('shipment.create', {
-        fromAddressId: fromAddress._id,
-        toAddressId: toAddress._id,
+        fromAddressId: fromAddress.id,
+        toAddressId: toAddress.id,
         items: selectedItems.map(item => ({
           batchPartId: item.id,
           actualQty: Number(item.actualQty || 0),
@@ -203,15 +205,6 @@ function resolveCandidateDestinationType(item, orgDetail, contractMap, productMa
   }
 
   return 'assembly'
-}
-
-function resolveDestinationType(candidates, orgDetail) {
-  const selected = (candidates || []).filter(item => item.selected)
-  if (selected.length > 0) {
-    return selected[0].destinationType || 'assembly'
-  }
-
-  return orgDetail && orgDetail.has_assembly ? 'freight' : 'assembly'
 }
 
 function resolveDefaultFromIndex(addresses, orgDetail) {

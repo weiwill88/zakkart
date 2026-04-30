@@ -117,10 +117,10 @@
             <el-option v-for="item in skuOptions" :key="item.sku_id" :label="item.label" :value="item.sku_id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="在制品">
+        <el-form-item v-if="editingRow && (form.wipQty || form.semiQty)" label="在制品">
           <el-input-number v-model="form.wipQty" :min="0" :step="10" style="width: 180px" />
         </el-form-item>
-        <el-form-item label="半成品">
+        <el-form-item v-if="editingRow && (form.wipQty || form.semiQty)" label="半成品">
           <el-input-number v-model="form.semiQty" :min="0" :step="10" style="width: 180px" />
         </el-form-item>
         <el-form-item label="成品">
@@ -161,6 +161,7 @@ import { fetchInventoryHistory, fetchInventoryOverview, upsertInventoryItem } fr
 import { fetchOrgList } from '../../services/organization'
 import { fetchPartTypeList } from '../../services/partType'
 import { fetchProductList } from '../../services/product'
+import { getEmptyInventoryForm } from '../../utils/inventoryForm'
 
 const loading = ref(false)
 const saving = ref(false)
@@ -180,7 +181,7 @@ const filters = ref({
   itemType: '',
   keyword: ''
 })
-const form = ref(getEmptyForm())
+const form = ref(getEmptyInventoryForm())
 
 const skuOptions = computed(() => (
   products.value.flatMap((product) => (product.skus || []).map((sku) => ({
@@ -229,7 +230,7 @@ async function loadData() {
 
 function openCreateDialog() {
   editingRow.value = null
-  form.value = getEmptyForm()
+  form.value = getEmptyInventoryForm()
   showDialog.value = true
 }
 
@@ -291,20 +292,6 @@ async function openHistoryDialog(row) {
     ElMessage.error(error.message || '加载库存历史失败')
   } finally {
     historyLoading.value = false
-  }
-}
-
-function getEmptyForm() {
-  return {
-    id: '',
-    orgId: '',
-    itemType: 'part',
-    partTypeId: '',
-    skuId: '',
-    wipQty: 0,
-    semiQty: 0,
-    finishedQty: 0,
-    reason: ''
   }
 }
 

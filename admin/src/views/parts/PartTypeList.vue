@@ -204,7 +204,7 @@ const form = reactive({
 })
 
 const dialogTitle = computed(() => (dialogMode.value === 'create' ? '新增配件管理项' : '编辑配件管理项'))
-const categoryOptions = computed(() => [...new Set(categoryCatalog.value)].filter(Boolean).sort((a, b) => a.localeCompare(b, 'zh-CN')))
+const categoryOptions = computed(() => [...new Set([...categoryCatalog.value, '其他配件'])].filter(Boolean).sort((a, b) => a.localeCompare(b, 'zh-CN')))
 const tableData = computed(() => (bulkEditing.value ? draftList.value : list.value))
 
 let searchTimer = null

@@ -1,4 +1,5 @@
 const { callApi } = require('../../../utils/api')
+const { mapCooperationStatus } = require('../../../utils/supplier-display')
 
 Page({
   data: { suppliers: [] },
@@ -29,6 +30,7 @@ Page({
 
       const suppliers = (orgResult.list || []).map((item) => {
         const stats = contractMap[item._id] || { total: 0, executing: 0 }
+        const status = mapCooperationStatus(item.cooperation_status)
         return {
           id: item._id,
           name: item.name || '',
@@ -36,6 +38,7 @@ Page({
           phone: item.contact_phone || '-',
           type: item.has_assembly ? '生产 + 组装' : '生产',
           address: item.address || '-',
+          ...status,
           contracts: stats.total,
           activeContracts: stats.executing
         }

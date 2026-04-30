@@ -75,6 +75,16 @@
         :editable="editing"
         :allow-row-delete="editing && batches.length === 0"
       />
+      <div v-if="editing" class="appendix-upload-bar">
+        <el-upload
+          :before-upload="handleUploadAppendixImage"
+          :show-file-list="false"
+          accept=".jpg,.jpeg,.png"
+        >
+          <el-button type="primary">上传附录图纸</el-button>
+        </el-upload>
+        <span class="file-hint">上传后请保存合同，图纸会进入在线合同和 Word 附录。</span>
+      </div>
     </el-card>
 
     <el-card shadow="never" class="section-card">
@@ -214,9 +224,9 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { fetchContractDetail, updateContract, exportContractWord, pushContractConfirm, uploadSignedContract, fetchSignedContractFileUrl } from '../../services/contract'
 import { fetchBatchList, createBatch, updateBatch, deleteBatch } from '../../services/batch'
-import { uploadCloudFile } from '../../services/cloudbase'
+import { getTempFileURLs, uploadCloudFile } from '../../services/cloudbase'
 import { buildContractWord } from '../../utils/contractWord'
-import { buildContractUpdatePayload, createContractDraftFromDetail } from '../../utils/contractDocument'
+import { buildContractUpdatePayload, createContractDraftFromDetail, getDeliverableProductItems, validateDeliveryTotals } from '../../utils/contractDocument'
 import { getContractStatusLabel, getContractStatusTagType, getGoodsStatusLabel, getGoodsStatusTagType, getSupplierConfirmStatusLabel, getSupplierConfirmStatusTagType } from '../../utils/status'
 import ContractDocumentEditor from '../../components/contracts/ContractDocumentEditor.vue'
 import { useAuthStore } from '../../stores/auth'
@@ -298,7 +308,7 @@ async function loadContract() {
     ])
     contract.value = contractData
     batches.value = batchData.list || []
-    draftContract.value = createContractDraftFromDetail(contractData)
+    draftContract.value = await resolveAppendixImageUrls(createContractDraftFromDetail(contractData))
   } catch (e) {
     ElMessage.error(e.message || '加载合同详情失败')
   } finally {
@@ -320,6 +330,7 @@ async function handleSave() {
   if (!draftContract.value) return
   saving.value = true
   try {
+    validateDeliveryTotals(draftContract.value)
     await updateContract(route.params.id, buildContractUpdatePayload(draftContract.value))
 
     ElMessage.success('合同已保存')
@@ -335,10 +346,12 @@ async function handleSave() {
 async function handleExportWord() {
   exporting.value = true
   try {
+    validateDeliveryTotals(draftContract.value || createContractDraftFromDetail(contract.value))
     const result = await exportContractWord(route.params.id)
     const { Packer } = await import('docx')
     const { saveAs } = await import('file-saver')
-    const doc = buildContractWord(createContractDraftFromDetail(result.contract))
+    const draft = await attachAppendixImageData(await resolveAppendixImageUrls(createContractDraftFromDetail(result.contract)))
+    const doc = buildContractWord(draft)
     const blob = await Packer.toBlob(doc)
     saveAs(blob, `${result.contract.contract_no || '合同'}.docx`)
     ElMessage.success('Word 文件已生成并下载')
@@ -353,6 +366,7 @@ async function handleExportWord() {
 async function handlePushConfirm() {
   pushingConfirm.value = true
   try {
+    validateDeliveryTotals(draftContract.value || createContractDraftFromDetail(contract.value))
     await pushContractConfirm(route.params.id)
     ElMessage.success('已推送给供应商确认')
     await loadContract()
@@ -365,6 +379,7 @@ async function handlePushConfirm() {
 
 async function handleUploadSigned(file) {
   try {
+    validateDeliveryTotals(draftContract.value || createContractDraftFromDetail(contract.value))
     const timestamp = Date.now()
     const safeName = (file.name || 'signed.pdf').replace(/[^\w.-]+/g, '_')
     const uploadResult = await uploadCloudFile({
@@ -380,6 +395,30 @@ async function handleUploadSigned(file) {
   }
 
   return false // prevent default upload
+}
+
+async function handleUploadAppendixImage(file) {
+  try {
+    const timestamp = Date.now()
+    const safeName = (file.name || 'appendix.png').replace(/[^\w.-]+/g, '_')
+    const uploadResult = await uploadCloudFile({
+      cloudPath: `contracts/appendix/${route.params.id}/${timestamp}_${safeName}`,
+      file
+    })
+    const fileId = uploadResult.fileID || uploadResult.fileId
+    const result = await getTempFileURLs([fileId])
+    const fileItem = (result.fileList || []).find(item => (item.fileID || item.fileId) === fileId)
+    draftContract.value.appendixImages.push({
+      file_id: fileId,
+      url: fileItem?.tempFileURL || fileItem?.tempFileUrl || '',
+      name: file.name || '附录图纸',
+      note: ''
+    })
+    ElMessage.success('附录图纸已上传，请保存合同')
+  } catch (e) {
+    ElMessage.error(e.message || '上传附录图纸失败')
+  }
+  return false
 }
 
 async function handleViewSignedPdf() {
@@ -510,7 +549,7 @@ function formatBatchChange(changeLog = {}) {
 function getContractPartRows(contractData = {}) {
   const productItems = Array.isArray(contractData.product_items) ? contractData.product_items : []
   if (productItems.length > 0) {
-    return productItems.map(item => ({
+    return getDeliverableProductItems(productItems).map(item => ({
       part_type_id: item.part_type_id || '',
       part_name: item.part_name || item.model || '未命名配件'
     }))
@@ -520,6 +559,57 @@ function getContractPartRows(contractData = {}) {
     part_type_id: item.part_type_id || '',
     part_name: item.part_name || item.sku_spec || '未命名配件'
   }))
+}
+
+async function resolveAppendixImageUrls(draft) {
+  const images = Array.isArray(draft.appendixImages) ? draft.appendixImages : []
+  const fileIds = images.filter(item => !item.url && item.file_id).map(item => item.file_id)
+  if (fileIds.length === 0) {
+    return draft
+  }
+
+  try {
+    const result = await getTempFileURLs(fileIds)
+    const urlMap = (result.fileList || []).reduce((acc, item) => {
+      const fileId = item.fileID || item.fileId
+      const tempUrl = item.tempFileURL || item.tempFileUrl || ''
+      if (fileId && tempUrl) {
+        acc[fileId] = tempUrl
+      }
+      return acc
+    }, {})
+    draft.appendixImages = images.map(item => ({
+      ...item,
+      url: item.url || urlMap[item.file_id] || ''
+    }))
+  } catch (error) {
+    console.warn('Failed to resolve appendix image URLs:', error)
+  }
+  return draft
+}
+
+async function attachAppendixImageData(draft) {
+  const images = Array.isArray(draft.appendixImages) ? draft.appendixImages : []
+  draft.appendixImages = await Promise.all(images.map(async (image) => {
+    if (!image.url) {
+      return image
+    }
+    try {
+      const response = await fetch(image.url)
+      if (!response.ok) {
+        return image
+      }
+      const buffer = await response.arrayBuffer()
+      return {
+        ...image,
+        data: new Uint8Array(buffer)
+      }
+    } catch (error) {
+      console.warn('Failed to fetch appendix image:', error)
+      return image
+    }
+  }))
+  return draft
 }
 
 // Watch showBatchDialog to init parts for new batch
@@ -568,6 +658,14 @@ onMounted(() => {
   margin: 8px 0 0;
   color: var(--el-text-color-secondary);
   font-size: 12px;
+}
+.appendix-upload-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--el-border-color);
 }
 .section-header-row {
   display: flex;

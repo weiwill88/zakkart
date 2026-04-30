@@ -54,8 +54,17 @@
             <el-form-item label="银行账号">
               <el-input v-model="editForm.bank_info.bank_account" :disabled="!editing" placeholder="银行卡号" />
             </el-form-item>
-            <el-form-item label="开户行全称">
-              <el-input v-model="editForm.bank_info.bank_branch" :disabled="!editing" placeholder="如：中国银行股份有限公司义乌稠州支行" />
+
+            <el-divider content-position="left">合同模板</el-divider>
+
+            <el-form-item label="成品货物要求">
+              <el-input
+                v-model="editForm.contract_template.quality_clause"
+                type="textarea"
+                :rows="5"
+                :disabled="!editing"
+                placeholder="不填写时使用系统默认条款；适合为不同行业/供应商定制成品货物要求"
+              />
             </el-form-item>
 
             <el-form-item>
@@ -280,7 +289,7 @@ const activeTab = ref('info')
 // Info tab
 const editing = ref(false)
 const saving = ref(false)
-const editForm = ref({ bank_info: {} })
+const editForm = ref({ bank_info: {}, contract_template: {} })
 
 // Address tab
 const addresses = ref([])
@@ -332,6 +341,9 @@ function resetEditForm() {
       bank_name: org.value.bank_info?.bank_name || '',
       bank_account: org.value.bank_info?.bank_account || '',
       bank_branch: org.value.bank_info?.bank_branch || ''
+    },
+    contract_template: {
+      quality_clause: org.value.contract_template?.quality_clause || ''
     }
   }
 }

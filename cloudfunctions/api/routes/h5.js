@@ -166,19 +166,13 @@ async function getShipmentByToken(token) {
 }
 
 async function ensureDriverObject(shipment) {
-  if (!shipment || (shipment.driver && typeof shipment.driver === 'object')) {
-    if (shipment && !shipment.driver) {
-      shipment.driver = {}
-    }
+  if (!shipment) {
     return
   }
 
-  await getCollection(SHIPMENTS_COLLECTION).doc(shipment._id).update({
-    data: {
-      driver: {}
-    }
-  })
-  shipment.driver = {}
+  if (!shipment.driver || typeof shipment.driver !== 'object') {
+    shipment.driver = {}
+  }
 }
 
 module.exports = {
@@ -186,3 +180,9 @@ module.exports = {
   'h5.driverStep1': driverStep1,
   'h5.driverStep2': driverStep2
 }
+
+Object.defineProperty(module.exports, '__test', {
+  value: {
+    ensureDriverObject
+  }
+})

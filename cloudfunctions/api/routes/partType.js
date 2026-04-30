@@ -79,7 +79,10 @@ async function create({ params }) {
   await ensureUniquePartType({
     name: String(name).trim(),
     category: String(category).trim(),
-    supplier_org_id
+    supplier_org_id,
+    material: String(material || '').trim(),
+    color: String(color || '').trim(),
+    size: String(size || '').trim()
   })
 
   const now = new Date().toISOString()
@@ -178,7 +181,10 @@ async function update({ params }) {
     id,
     name: nextRecord.name,
     category: nextRecord.category,
-    supplier_org_id: nextRecord.supplier_org_id
+    supplier_org_id: nextRecord.supplier_org_id,
+    material: nextRecord.material,
+    color: nextRecord.color,
+    size: nextRecord.size
   })
 
   updates.updated_at = new Date().toISOString()
@@ -265,17 +271,34 @@ async function loadOrganization(orgId) {
   return result.data
 }
 
-async function ensureUniquePartType({ id, name, category, supplier_org_id }) {
+async function ensureUniquePartType({ id, name, category, supplier_org_id, material = '', color = '', size = '' }) {
   const duplicates = await getCollection(COLLECTION)
     .where({ name, category, supplier_org_id })
     .get()
 
-  const exists = (duplicates.data || []).some((item) => item._id !== id)
+  const nextFingerprint = buildPartTypeFingerprint({ name, category, supplier_org_id, material, color, size })
+  const exists = (duplicates.data || []).some((item) => {
+    if (item._id === id) {
+      return false
+    }
+    return buildPartTypeFingerprint(item) === nextFingerprint
+  })
   if (exists) {
     const error = new Error(`配件主数据已存在：${category} / ${name}`)
     error.code = 409
     throw error
   }
+}
+
+function buildPartTypeFingerprint(item = {}) {
+  return [
+    item.category,
+    item.name,
+    item.supplier_org_id,
+    item.material,
+    item.color,
+    item.size
+  ].map(value => String(value || '').trim()).join('|')
 }
 
 function normalizeUnit(unit) {
@@ -382,3 +405,9 @@ module.exports = {
   'partType.bulkUpdate': bulkUpdate,
   'partType.delete': remove
 }
+
+Object.defineProperty(module.exports, '__test', {
+  value: {
+    buildPartTypeFingerprint
+  }
+})

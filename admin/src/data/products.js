@@ -14,6 +14,7 @@ export const PART_TYPES = {
   PLASTIC: { key: 'plastic', label: '塑料配件', tagClass: 'tag-plastic', icon: '🔩' },
   DISC: { key: 'disc', label: '孔盘配件', tagClass: 'tag-disc', icon: '💿' },
   PACKAGING: { key: 'packaging', label: '成品包装', tagClass: 'tag-packaging', icon: '📦' },
+  OTHER: { key: 'other', label: '其他配件', tagClass: 'tag-other', icon: '🔖' },
 }
 
 // ============================================

@@ -1,6 +1,6 @@
 import {
   Document, Paragraph, TextRun, Table, TableRow, TableCell,
-  WidthType, AlignmentType, BorderStyle, HeadingLevel
+  WidthType, AlignmentType, BorderStyle, ImageRun
 } from 'docx'
 
 const border = { style: BorderStyle.SINGLE, size: 1, color: '999999' }
@@ -14,6 +14,7 @@ export function buildContractWord(c) {
   const buyerInfo = c.buyerInfo || {}
   const clauseSections = c.clauseSections || {}
   const productItems = c.productItems || []
+  const deliverableItems = productItems.filter(item => item.item_type !== 'fee')
   const deliveryRows = c.deliveryRows || []
 
   // Header
@@ -45,12 +46,12 @@ export function buildContractWord(c) {
   const settlementHeader = tableRow(['产品型号', '采购数量', '采购单价（含税）', '采购金额（含税）'], true)
   const settlementRows = productItems.map(item => {
     const price = parseFloat(item.unit_price ?? item.unitPrice)
-    const totalQty = Number((item.total_qty ?? item.totalQty) || 0)
+    const totalQty = item.item_type === 'fee' ? 1 : Number((item.total_qty ?? item.totalQty) || 0)
     const amount = !Number.isNaN(price) ? (price * totalQty).toLocaleString() + '元' : '____元'
     return tableRow([
       item.model || item.part_name || item.partName || '',
-      formatQtyText(item),
-      price || price === 0 ? `${price}元/件` : '____元/件',
+      item.item_type === 'fee' ? '一次性费用' : formatQtyText(item),
+      price || price === 0 ? `${price}元/${item.item_type === 'fee' ? '项' : '件'}` : `____元/${item.item_type === 'fee' ? '项' : '件'}`,
       amount
     ])
   })
@@ -60,7 +61,7 @@ export function buildContractWord(c) {
 
   sections.push(p(AlignmentType.LEFT, [t('2. 规格说明表', 22, true)], { before: 120, after: 80 }))
   const specHeader = tableRow(['产品型号', '规格或尺寸', '材质', '重量', '颜色'], true)
-  const specRows = productItems.map(item => tableRow([
+  const specRows = deliverableItems.map(item => tableRow([
     item.model || item.part_name || item.partName || '',
     item.size || '以产前样品为准',
     item.material || '',
@@ -79,16 +80,16 @@ export function buildContractWord(c) {
   sections.push(p(AlignmentType.JUSTIFIED, [t(clauseSections.delivery_clause || '本合同约定的采购产品，乙方承诺按下面的交付计划表完成全部产品的生产和包装工序并可交付甲方提货；', 22)]))
 
   // Delivery table
-  if (deliveryRows.length > 0 && productItems.length > 0) {
-    const dHeader = tableRow(['交付提货时间', ...productItems.map(item => item.model || item.part_name || item.partName || '配件'), '总数量'], true)
+  if (deliveryRows.length > 0 && deliverableItems.length > 0) {
+    const dHeader = tableRow(['交付提货时间', ...deliverableItems.map(item => item.model || item.part_name || item.partName || '配件'), '总数量'], true)
     const dDataRows = deliveryRows.map(row => {
-      const rowTotal = productItems.reduce((s, item) => s + (Number(row.qtys?.[item.row_id] || 0)), 0)
-      return tableRow([row.date || '____', ...productItems.map(item => String(row.qtys?.[item.row_id] || 0)), String(rowTotal)])
+      const rowTotal = deliverableItems.reduce((s, item) => s + (Number(row.qtys?.[item.row_id] || 0)), 0)
+      return tableRow([row.date || '____', ...deliverableItems.map(item => String(row.qtys?.[item.row_id] || 0)), String(rowTotal)])
     })
     // Totals row
-    const colTotals = productItems.map(item => String(deliveryRows.reduce((s, row) => s + (Number(row.qtys?.[item.row_id] || 0)), 0)))
+    const colTotals = deliverableItems.map(item => String(deliveryRows.reduce((s, row) => s + (Number(row.qtys?.[item.row_id] || 0)), 0)))
     const grandDeliveryTotal = String(deliveryRows.reduce((s, row) => {
-      return s + productItems.reduce((rs, item) => rs + (Number(row.qtys?.[item.row_id] || 0)), 0)
+      return s + deliverableItems.reduce((rs, item) => rs + (Number(row.qtys?.[item.row_id] || 0)), 0)
     }, 0))
     dDataRows.push(tableRow(['总数', ...colTotals, grandDeliveryTotal], false))
 
@@ -113,6 +114,27 @@ export function buildContractWord(c) {
       sections.push(p(AlignmentType.LEFT, [t(line, 22)], { after: 40 }))
     })
   })
+
+  const appendixImages = Array.isArray(c.appendixImages) ? c.appendixImages : []
+  if (appendixImages.length > 0) {
+    sections.push(heading('附录一：产品规格和尺寸说明'))
+    appendixImages.forEach((image, index) => {
+      sections.push(p(AlignmentType.CENTER, [t(image.note || image.name || `规格图纸 ${index + 1}`, 20, true)], { before: 100, after: 80 }))
+      if (image.data) {
+        sections.push(new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [
+            new ImageRun({
+              data: image.data,
+              transformation: { width: 480, height: 320 }
+            })
+          ]
+        }))
+      } else {
+        sections.push(p(AlignmentType.CENTER, [t(image.file_id || image.url || '图纸文件已上传', 18, false, '666666')]))
+      }
+    })
+  }
 
   // Signature
   sections.push(p(AlignmentType.LEFT, [t('甲方（盖章）：                              乙方（盖章）：', 22)], { before: 300 }))
@@ -181,10 +203,8 @@ function summaryRow(label, value, labelSpan = 1) {
 }
 
 function formatQtyText(item = {}) {
-  const detail = String(item.qty_detail || item.qtyDetail || '').trim()
   const totalQty = Number((item.total_qty ?? item.totalQty) || 0)
-  const totalText = `合计：${totalQty.toLocaleString()}`
-  return detail ? `${detail.replace(/\n/g, '；')}；${totalText}` : totalText
+  return totalQty.toLocaleString()
 }
 
 function calcTotal(c) {

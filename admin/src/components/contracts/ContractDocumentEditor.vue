@@ -57,16 +57,22 @@
         </thead>
         <tbody>
           <tr v-for="item in contract.productItems" :key="item.row_id">
-            <td><FieldText v-model="item.model" :editable="editable" width="120px" placeholder="型号" /></td>
+            <td><FieldText v-model="item.model" :editable="editable" width="120px" :placeholder="isFeeItem(item) ? '费用名称' : '型号'" /></td>
             <td class="qty-cell">
-              <el-input
-                v-if="editable"
-                v-model="item.qty_detail"
-                type="textarea"
-                :rows="2"
-              />
-              <span v-else class="qty-text">{{ formatQtyDetail(item) }}</span>
-              <div class="qty-total">合计：{{ formatQuantity(item.total_qty) }}</div>
+              <template v-if="isFeeItem(item)">
+                <span class="qty-text">一次性费用</span>
+              </template>
+              <template v-else>
+                <el-input-number
+                  v-if="editable"
+                  v-model="item.total_qty"
+                  :min="0"
+                  :step="100"
+                  controls-position="right"
+                  style="width: 130px"
+                />
+                <span v-else class="qty-text">{{ formatQuantity(item.total_qty) }}</span>
+              </template>
             </td>
             <td>
               <el-input-number
@@ -91,6 +97,9 @@
           </tr>
         </tbody>
       </table>
+      <div v-if="editable" class="settlement-actions">
+        <el-button text type="primary" size="small" @click="handleAddFeeRow">+ 增加一次性费用</el-button>
+      </div>
 
       <p class="sub-title">2. 规格说明表</p>
       <table class="contract-table">
@@ -104,7 +113,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in contract.productItems" :key="`${item.row_id}_spec`">
+          <tr v-for="item in getDeliverableProductItems(contract.productItems)" :key="`${item.row_id}_spec`">
             <td><FieldText v-model="item.model" :editable="editable" width="120px" placeholder="型号" /></td>
             <td><FieldText v-model="item.size" :editable="editable" width="160px" placeholder="尺寸/标准" /></td>
             <td><FieldText v-model="item.material" :editable="editable" width="100px" placeholder="材质" /></td>
@@ -136,7 +145,7 @@
         <thead>
           <tr>
             <th style="width: 140px">交付提货时间</th>
-            <th v-for="item in contract.productItems" :key="item.row_id">{{ item.model || item.part_name || '配件' }}</th>
+            <th v-for="item in getDeliverableProductItems(contract.productItems)" :key="item.row_id">{{ item.model || item.part_name || '配件' }}</th>
             <th style="width: 80px">总数量</th>
           </tr>
         </thead>
@@ -154,7 +163,7 @@
               />
               <span v-else>{{ row.date || '-' }}</span>
             </td>
-            <td v-for="item in contract.productItems" :key="item.row_id">
+            <td v-for="item in getDeliverableProductItems(contract.productItems)" :key="item.row_id">
               <el-input-number
                 v-if="editable"
                 v-model="row.qtys[item.row_id]"
@@ -170,7 +179,7 @@
           </tr>
           <tr class="total-row">
             <td style="font-weight: 600; text-align: center">总数</td>
-            <td v-for="item in contract.productItems" :key="item.row_id" style="font-weight: 600; text-align: center">{{ calcDeliveryColTotal(contract, item.row_id) }}</td>
+            <td v-for="item in getDeliverableProductItems(contract.productItems)" :key="item.row_id" style="font-weight: 600; text-align: center">{{ calcDeliveryColTotal(contract, item.row_id) }}</td>
             <td style="font-weight: 700; text-align: center">{{ calcDeliveryGrandTotal(contract) }}</td>
           </tr>
         </tbody>
@@ -178,6 +187,17 @@
       <div v-if="editable" style="margin-top: 8px">
         <el-button text type="primary" size="small" @click="handleAddDeliveryRow">+ 增加一行</el-button>
         <el-button text type="danger" size="small" :disabled="contract.deliveryRows.length <= 1" @click="handleDeleteDeliveryRow">- 删除最后一行</el-button>
+      </div>
+    </div>
+
+    <div class="contract-section" v-if="(contract.appendixImages || []).length > 0">
+      <h3>附录一：产品规格和尺寸说明</h3>
+      <div class="appendix-grid">
+        <figure v-for="image in contract.appendixImages" :key="image.file_id || image.url || image.name" class="appendix-item">
+          <img v-if="image.url" :src="image.url" :alt="image.name || '附录图片'" />
+          <div v-else class="appendix-placeholder">{{ image.name || '附录图片' }}</div>
+          <figcaption>{{ image.note || image.name || '规格图纸' }}</figcaption>
+        </figure>
       </div>
     </div>
 
@@ -258,8 +278,11 @@ import {
   calcDeliveryGrandTotal,
   calcDeliveryRowTotal,
   calcProductItemAmount,
+  createEmptyFeeItem,
   createEmptyDeliveryRow,
   ensureContractShape,
+  getDeliverableProductItems,
+  isFeeItem,
   removeProductItem
 } from '../../utils/contractDocument'
 
@@ -334,6 +357,10 @@ function handleAddDeliveryRow() {
   props.contract.deliveryRows.push(createEmptyDeliveryRow(props.contract.productItems))
 }
 
+function handleAddFeeRow() {
+  props.contract.productItems.push(createEmptyFeeItem())
+}
+
 function handleDeleteDeliveryRow() {
   if (props.contract.deliveryRows.length > 1) {
     props.contract.deliveryRows.pop()
@@ -355,11 +382,6 @@ function formatAmount(value) {
 function formatQuantity(value) {
   const number = Number(value || 0)
   return number.toLocaleString()
-}
-
-function formatQtyDetail(item) {
-  const detail = String(item.qty_detail || '').trim()
-  return detail || '-'
 }
 
 function splitLines(text) {
@@ -447,6 +469,11 @@ function splitLines(text) {
   color: #6B7280;
 }
 
+.settlement-actions {
+  margin-top: -4px;
+  margin-bottom: 8px;
+}
+
 .contract-text {
   margin: 0 0 8px;
   text-align: justify;
@@ -510,6 +537,39 @@ function splitLines(text) {
   justify-content: space-between;
   margin-top: 40px;
   padding-top: 24px;
+}
+
+.appendix-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.appendix-item {
+  margin: 0;
+  border: 1px solid #d1d5db;
+  padding: 8px;
+}
+
+.appendix-item img {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+}
+
+.appendix-placeholder {
+  padding: 32px 12px;
+  background: #f9fafb;
+  color: #6b7280;
+  text-align: center;
+}
+
+.appendix-item figcaption {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
 }
 
 .sign-col {

@@ -196,10 +196,14 @@ async function generate({ params, auth }) {
       rawMaterials,
       depositRatio: 0.30,
       finalRatio: 0.70,
-      supplierBankName: org.bank_info?.bank_name || orgName,
+      supplierAccountName: orgName,
+      supplierBankName: org.bank_info?.bank_name || '',
       supplierBankAccount: org.bank_info?.bank_account || '',
-      supplierBankBranch: org.bank_info?.bank_branch || ''
+      supplierBankBranch: org.bank_info?.bank_name || org.bank_info?.bank_branch || ''
     })
+    if (org.contract_template?.quality_clause) {
+      clauseSections.quality_clause = org.contract_template.quality_clause
+    }
     const deliveryRows = [createEmptyDeliveryRow(productItems)]
 
     const contractDoc = {
@@ -225,7 +229,8 @@ async function generate({ params, auth }) {
       supplier_credit_code: org.credit_code || '',
       supplier_address: org.address || '',
       supplier_phone: org.contact_phone || '',
-      supplier_bank_name: org.bank_info?.bank_name || orgName,
+      supplier_bank_account_name: orgName,
+      supplier_bank_name: org.bank_info?.bank_name || '',
       supplier_bank_account: org.bank_info?.bank_account || '',
       supplier_bank_branch: org.bank_info?.bank_branch || '',
       product_desc: productDesc,
@@ -254,6 +259,7 @@ async function generate({ params, auth }) {
       rawMaterials,
       clauseSections,
       bankInfo: {
+        account_name: orgName,
         bank_name: org.bank_info?.bank_name || '',
         bank_account: org.bank_info?.bank_account || '',
         bank_branch: org.bank_info?.bank_branch || ''

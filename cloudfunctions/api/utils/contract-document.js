@@ -15,12 +15,15 @@ function createClauseSections({
   rawMaterials = '',
   depositRatio = 0.3,
   finalRatio = 0.7,
+  supplierAccountName = '',
   supplierBankName = '',
   supplierBankAccount = '',
   supplierBankBranch = ''
 } = {}) {
   const depositPercent = formatPercent(depositRatio)
   const finalPercent = formatPercent(finalRatio)
+  const accountName = String(supplierAccountName || '').trim()
+  const bankName = String(supplierBankName || supplierBankBranch || '').trim()
 
   return {
     preamble: `经甲乙双方充分协商，根据《中华人民共和国合同法》及相关法律法规的有关规定，秉承公平、自愿、诚信的合作原则，就甲方向乙方采购${productDesc}产品用以生产组装宠物吊床产品的事宜，双方订立本采购合同，并承诺共同遵守。`,
@@ -31,10 +34,11 @@ function createClauseSections({
     quality_guarantee_clause: '如乙方生产的货品中，有不符合本协议约定的产品标准和要求以及产品包装要求的货品（以下简称"不合格品"），则乙方保证在3个自然日内，对不合格品进行返工重做并承担返工所需的成本费用。且乙方保证本次所生产全部货品的不合格品率（不合格品率=不合格品/采购数量）在1%以下。',
     payment_ratio_deposit: depositRatio,
     payment_ratio_final: finalRatio,
-    payment_bank_name: supplierBankName || '',
+    payment_account_name: accountName,
+    payment_bank_name: bankName,
     payment_bank_account: supplierBankAccount || '',
-    payment_bank_branch: supplierBankBranch || '',
-    payment_clause: `甲方承诺在合同签署后，货物生产前将货物采购订金支付至乙方指定银行账户，采购订金为货物采购总金额的${depositPercent}%；乙方完成全部货物的生产后，甲方对乙方生产货物进行现场验收，并向乙方支付剩余${finalPercent}%的采购尾款，如甲方验收时发现不合格品，则不合格品的尾款待乙方完成返工并交付甲方后，由甲方立即支付给乙方。\n\n乙方指定的收款账户信息如下：\n户名：${supplierBankName || '________'}\n账户号：${supplierBankAccount || '________'}\n开户行：${supplierBankBranch || '________'}`,
+    payment_bank_branch: bankName,
+    payment_clause: `甲方承诺在合同签署后，货物生产前将货物采购订金支付至乙方指定银行账户，采购订金为货物采购总金额的${depositPercent}%；乙方完成全部货物的生产后，甲方对乙方生产货物进行现场验收，并向乙方支付剩余${finalPercent}%的采购尾款，如甲方验收时发现不合格品，则不合格品的尾款待乙方完成返工并交付甲方后，由甲方立即支付给乙方。\n\n乙方指定的收款账户信息如下：\n户名：${accountName || '________'}\n账户号：${supplierBankAccount || '________'}\n开户行：${bankName || '________'}`,
     invoice_clause: '乙方在收到甲方通知乙方开具发票时，乙方须在3个工作日内按本合同中甲方要求的开票信息为甲方开具增值税专用发票，开票信息如下：\n名称：上海掇骁贸易有限公司\n税号：91310109MACHK7GN2R\n开户行：中信银行黄浦支行 8110201012001655475\n联系地址：上海市虹口区同心路723号13幢5321室 13917000290',
     section6_text: '1) 合同签署后甲方须及时向乙方支付采购订金，并按合同约定时间及时向乙方支付采购货物的尾款。\n2) 甲方须在乙方完成货物生产后，及时对货物进行验收。',
     section7_text: '1) 确保货物的规格质量与货物生产前寄给甲方的各批次产品对应的产前样品相符，并符合上述产品规格和尺寸说明的标准及成品要求。\n2) 确保甲方在完成采购订金的支付后，乙方按本合同中约定的时间按时完成货物的生产与包装。\n3) 如乙方未遵守上述约定，则甲方有权利要求乙方退或更换该次采购的部分或全部货品。',
@@ -50,6 +54,7 @@ function buildDefaultProductItems(items = []) {
     const key = item.part_type_id || item.part_name || item.item_id
     if (!grouped[key]) {
       grouped[key] = {
+        item_type: 'product',
         row_id: `pi_${key}`,
         part_type_id: item.part_type_id || '',
         part_name: item.part_name || '',
@@ -57,11 +62,11 @@ function buildDefaultProductItems(items = []) {
         size: item.part_size || '',
         material: item.part_material || '',
         weight: item.part_weight || '',
-      color: item.part_color || '',
-      total_qty: 0,
-      unit_price: item.unit_price != null ? Number(item.unit_price) : null,
-      qty_detail_rows: [],
-      source_item_ids: []
+        color: item.part_color || '',
+        total_qty: 0,
+        unit_price: item.unit_price != null ? Number(item.unit_price) : null,
+        qty_detail_rows: [],
+        source_item_ids: []
       }
     }
 
@@ -74,6 +79,7 @@ function buildDefaultProductItems(items = []) {
   })
 
   return Object.values(grouped).map((item) => ({
+    item_type: item.item_type,
     row_id: item.row_id,
     part_type_id: item.part_type_id,
     part_name: item.part_name,
@@ -84,13 +90,14 @@ function buildDefaultProductItems(items = []) {
     color: item.color,
     total_qty: item.total_qty,
     qty_detail: item.qty_detail_rows.join('\n'),
-    unit_price: item.unit_price
+    unit_price: item.unit_price,
+    source_item_ids: item.source_item_ids
   }))
 }
 
 function createEmptyDeliveryRow(productItems = []) {
   const qtys = {}
-  productItems.forEach((item) => {
+  productItems.filter(isDeliverableProductItem).forEach((item) => {
     qtys[item.row_id] = 0
   })
 
@@ -102,9 +109,10 @@ function createEmptyDeliveryRow(productItems = []) {
 }
 
 function normalizeDeliveryRows(deliveryRows = [], productItems = []) {
-  const itemIds = new Set(productItems.map(item => item.row_id))
+  const deliverableItems = productItems.filter(isDeliverableProductItem)
+  const itemIds = new Set(deliverableItems.map(item => item.row_id))
   const legacyNameToId = {}
-  productItems.forEach((item) => {
+  deliverableItems.forEach((item) => {
     legacyNameToId[item.part_name] = item.row_id
     legacyNameToId[item.model] = item.row_id
   })
@@ -116,7 +124,7 @@ function normalizeDeliveryRows(deliveryRows = [], productItems = []) {
       qtys: {}
     }
 
-    productItems.forEach((item) => {
+    deliverableItems.forEach((item) => {
       nextRow.qtys[item.row_id] = 0
     })
 
@@ -134,7 +142,7 @@ function normalizeDeliveryRows(deliveryRows = [], productItems = []) {
     return nextRow
   })
 
-  return normalized.length > 0 ? normalized : [createEmptyDeliveryRow(productItems)]
+  return normalized.length > 0 ? normalized : [createEmptyDeliveryRow(deliverableItems)]
 }
 
 function buildRawMaterialsText(rawMaterials = []) {
@@ -153,17 +161,42 @@ function ensureContractDocument(contract = {}, supplier = {}) {
     || ''
   ).trim()
 
+  const defaultClauseSections = createClauseSections({
+    productDesc: contract.product_desc || inferProductDesc(productItems),
+    rawMaterials: rawMaterialsText,
+    depositRatio: contract.deposit_ratio != null ? contract.deposit_ratio : 0.3,
+    finalRatio: contract.final_ratio != null ? contract.final_ratio : 0.7,
+    supplierAccountName: contract.supplier_bank_account_name || contract.payment_account_name || contract.supplier_name || supplier.name || '',
+    supplierBankName: contract.supplier_bank_name || supplier.bank_info?.bank_name || '',
+    supplierBankAccount: contract.supplier_bank_account || supplier.bank_info?.bank_account || '',
+    supplierBankBranch: contract.supplier_bank_name || supplier.bank_info?.bank_name || contract.supplier_bank_branch || supplier.bank_info?.bank_branch || ''
+  })
+  const incomingClauseSections = contract.clause_sections || {}
   const clauseSections = {
-    ...createClauseSections({
-      productDesc: contract.product_desc || inferProductDesc(productItems),
-      rawMaterials: rawMaterialsText,
-      depositRatio: contract.deposit_ratio != null ? contract.deposit_ratio : 0.3,
-      finalRatio: contract.final_ratio != null ? contract.final_ratio : 0.7,
-      supplierBankName: contract.supplier_bank_name || supplier.bank_info?.bank_name || '',
-      supplierBankAccount: contract.supplier_bank_account || supplier.bank_info?.bank_account || '',
-      supplierBankBranch: contract.supplier_bank_branch || supplier.bank_info?.bank_branch || ''
-    }),
-    ...(contract.clause_sections || {})
+    ...defaultClauseSections,
+    ...incomingClauseSections
+  }
+  clauseSections.payment_account_name = clauseSections.payment_account_name
+    || contract.supplier_bank_account_name
+    || contract.payment_account_name
+    || contract.supplier_name
+    || supplier.name
+    || ''
+  clauseSections.payment_bank_name = clauseSections.payment_bank_name
+    || contract.supplier_bank_name
+    || supplier.bank_info?.bank_name
+    || contract.supplier_bank_branch
+    || supplier.bank_info?.bank_branch
+    || ''
+  clauseSections.payment_bank_branch = clauseSections.payment_bank_branch || clauseSections.payment_bank_name
+  clauseSections.payment_bank_account = clauseSections.payment_bank_account
+    || contract.supplier_bank_account
+    || supplier.bank_info?.bank_account
+    || ''
+  const existingPaymentClause = String(incomingClauseSections.payment_clause || '')
+  const isGeneratedPaymentClause = existingPaymentClause.includes('乙方指定的收款账户信息如下')
+  if (!existingPaymentClause || (isGeneratedPaymentClause && !existingPaymentClause.includes(`户名：${clauseSections.payment_account_name}`))) {
+    clauseSections.payment_clause = defaultClauseSections.payment_clause
   }
 
   return {
@@ -172,13 +205,15 @@ function ensureContractDocument(contract = {}, supplier = {}) {
     raw_materials: rawMaterialsText,
     product_items: productItems,
     delivery_rows: normalizeDeliveryRows(contract.delivery_rows || [], productItems),
-    clause_sections: clauseSections
+    clause_sections: clauseSections,
+    appendix_images: normalizeAppendixImages(contract.appendix_images || contract.attachment_images || [])
   }
 }
 
 function normalizeProductItems(productItems, items) {
   if (Array.isArray(productItems) && productItems.length > 0) {
     return productItems.map((item, index) => ({
+      item_type: item.item_type === 'fee' ? 'fee' : 'product',
       row_id: item.row_id || `pi_${index + 1}`,
       part_type_id: item.part_type_id || '',
       part_name: item.part_name || item.model || '',
@@ -188,7 +223,7 @@ function normalizeProductItems(productItems, items) {
       weight: item.weight || '',
       color: item.color || '',
       qty_detail: item.qty_detail || '',
-      total_qty: Number(item.total_qty || 0),
+      total_qty: item.item_type === 'fee' ? Number(item.total_qty || 1) : Number(item.total_qty || 0),
       unit_price: normalizeNullableNumber(item.unit_price),
       source_item_ids: Array.isArray(item.source_item_ids) ? item.source_item_ids : []
     }))
@@ -199,6 +234,7 @@ function normalizeProductItems(productItems, items) {
 
 function inferProductDesc(productItems = []) {
   const names = productItems
+    .filter(isDeliverableProductItem)
     .map(item => String(item.part_name || item.model || '').trim())
     .filter(Boolean)
   return names.length > 0 ? names.join('、') : '配件'
@@ -217,12 +253,58 @@ function formatPercent(value) {
   return (Number(value || 0) * 100).toFixed(0)
 }
 
+function isDeliverableProductItem(item = {}) {
+  return item.item_type !== 'fee'
+}
+
+function calcDeliveryColTotal(contractDraft = {}, rowId = '') {
+  return (contractDraft.delivery_rows || contractDraft.deliveryRows || []).reduce((sum, row) => {
+    return sum + Number(row.qtys?.[rowId] || 0)
+  }, 0)
+}
+
+function validateDeliveryTotals(contractDraft = {}) {
+  const productItems = (contractDraft.product_items || contractDraft.productItems || []).filter(isDeliverableProductItem)
+  const deliveryRows = contractDraft.delivery_rows || contractDraft.deliveryRows || []
+  const errors = []
+
+  productItems.forEach((item) => {
+    const expected = Number(item.total_qty || 0)
+    const actual = deliveryRows.reduce((sum, row) => sum + Number(row.qtys?.[item.row_id] || 0), 0)
+    if (expected !== actual) {
+      errors.push(`${item.model || item.part_name || '未命名货物'}：采购数量 ${expected}，交付计划 ${actual}`)
+    }
+  })
+
+  if (errors.length > 0) {
+    const error = new Error(`交付计划数量必须与采购数量一致：${errors.join('；')}`)
+    error.code = 400
+    error.details = errors
+    throw error
+  }
+}
+
+function normalizeAppendixImages(images = []) {
+  return (Array.isArray(images) ? images : [])
+    .map((item, index) => ({
+      file_id: item.file_id || item.fileId || '',
+      url: item.url || item.tempUrl || '',
+      name: item.name || `附录图片${index + 1}`,
+      note: item.note || ''
+    }))
+    .filter(item => item.file_id || item.url)
+}
+
 module.exports = {
   buildDefaultProductItems,
   buildRawMaterialsText,
+  calcDeliveryColTotal,
   createBuyerInfo,
   createClauseSections,
   createEmptyDeliveryRow,
   ensureContractDocument,
-  normalizeDeliveryRows
+  isDeliverableProductItem,
+  normalizeAppendixImages,
+  normalizeDeliveryRows,
+  validateDeliveryTotals
 }

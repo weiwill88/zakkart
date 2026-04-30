@@ -3,7 +3,7 @@
   <view wx:for="{{suppliers}}" wx:key="id" class="card" style="padding: 28rpx 32rpx !important" bindtap="goToDetail" data-id="{{item.id}}">
     <view class="flex-between" style="margin-bottom: 8rpx">
       <text style="font-size: 30rpx; font-weight: 600">{{item.name}}</text>
-      <view class="badge badge-completed">合作中</view>
+      <view class="badge {{item.statusClass}}">{{item.statusText}}</view>
     </view>
     <view class="info-row"><text class="info-label">联系人</text><text class="info-value">{{item.contact}} · {{item.phone}}</text></view>
     <view class="info-row"><text class="info-label">配件类型</text><text class="info-value">{{item.type}}</text></view>
