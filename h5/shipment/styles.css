@@ -1,0 +1,258 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  background: linear-gradient(180deg, #eef4ff 0%, #f8fafc 28%, #eef2f7 100%);
+  color: #0f172a;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.hero {
+  padding: 20px 4px 8px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #2563eb;
+}
+
+.hero h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+}
+
+.hero-copy,
+.muted {
+  margin: 0;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.small-text {
+  font-size: 13px;
+}
+
+.card {
+  margin-top: 16px;
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.status-label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+#shipmentNo {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+.summary-text {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #1e3a8a;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.goods-list {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.guide-list {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: #334155;
+}
+
+.guide-list li + li {
+  margin-top: 8px;
+}
+
+.goods-item + .goods-item {
+  margin-top: 12px;
+}
+
+.goods-item {
+  padding: 14px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.goods-item-head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.goods-item-index,
+.goods-item-qty {
+  font-size: 12px;
+  color: #475569;
+}
+
+.goods-item-qty {
+  margin-left: auto;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.item-subline {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #475569;
+}
+
+.field + .field {
+  margin-top: 14px;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.field input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  font-size: 16px;
+}
+
+.primary-btn {
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.primary-btn:disabled {
+  opacity: 0.5;
+}
+
+.secondary-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mini-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mini-badge-primary {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.mini-badge-muted {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.confirm-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.signature-canvas {
+  width: 100%;
+  height: 180px;
+  margin-top: 8px;
+  border: 1px dashed #94a3b8;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,250,252,0.92)),
+    repeating-linear-gradient(180deg, transparent, transparent 38px, rgba(148,163,184,0.18) 39px);
+  touch-action: none;
+}
+
+.signature-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+.notice-card {
+  background: rgba(239, 246, 255, 0.85);
+}
+
+@media (max-width: 640px) {
+  .hero h1 {
+    font-size: 28px;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+}

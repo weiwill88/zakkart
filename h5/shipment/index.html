@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Zakkart 司机扫码</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">Zakkart Logistics</p>
+        <h1>司机扫码交接</h1>
+        <p class="hero-copy">同一张二维码或链接可重复打开。司机可提前登记，也可到现场后补登记；登记完成后可继续确认提货。</p>
+      </section>
+
+      <section class="card" id="statusCard">
+        <p class="status-label">加载中</p>
+        <h2 id="shipmentNo">正在获取发货单信息</h2>
+        <p id="statusText" class="muted">请稍候...</p>
+        <p id="shipmentSummary" class="summary-text"></p>
+      </section>
+
+      <section class="card notice-card">
+        <h3>使用说明</h3>
+        <ul class="guide-list">
+          <li>同一个二维码对应同一张发货单，不是一次性码。</li>
+          <li>如果司机已提前确定，可先登记司机和车辆；如果未提前确定，也可到装货现场后再登记。</li>
+          <li>登记完成后，如司机已在现场，可直接继续核对货物并确认提货，无需重新找新二维码。</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <div class="flex-between">
+          <h3>货物信息</h3>
+          <span id="goodsCountBadge" class="mini-badge">0 条</span>
+        </div>
+        <div class="info-grid">
+          <div>
+            <span class="label">发货方</span>
+            <strong id="shipperName">-</strong>
+          </div>
+          <div>
+            <span class="label">目的地</span>
+            <strong id="destinationName">-</strong>
+          </div>
+        </div>
+        <ul id="goodsList" class="goods-list"></ul>
+      </section>
+
+      <section class="card" id="driverInfoCard">
+        <div class="flex-between">
+          <h3>承运司机信息</h3>
+          <span id="driverStatusBadge" class="mini-badge mini-badge-muted">待登记</span>
+        </div>
+        <div class="info-grid">
+          <div>
+            <span class="label">司机姓名</span>
+            <strong id="driverInfoName">-</strong>
+          </div>
+          <div>
+            <span class="label">车牌号</span>
+            <strong id="driverInfoPlate">-</strong>
+          </div>
+          <div>
+            <span class="label">联系电话</span>
+            <strong id="driverInfoPhone">-</strong>
+          </div>
+          <div>
+            <span class="label">接单时间</span>
+            <strong id="driverInfoStep1At">-</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="step1Card">
+        <h3>Step 1 · 接单登记</h3>
+        <p class="muted">可由甲方、物流中介或发货方把这张发货单二维码/链接转给司机。司机可在到厂前登记，也可到现场后补登记。</p>
+        <div class="field">
+          <label for="driverName">司机姓名</label>
+          <input id="driverName" placeholder="请输入姓名" />
+        </div>
+        <div class="field">
+          <label for="plateNumber">车牌号</label>
+          <input id="plateNumber" placeholder="例如 浙A12345" />
+        </div>
+        <div class="field">
+          <label for="driverPhone">联系电话</label>
+          <input id="driverPhone" placeholder="选填" />
+        </div>
+        <button id="step1Button" class="primary-btn">确认接单</button>
+      </section>
+
+      <section class="card" id="step2Card">
+        <h3>Step 2 · 装车确认</h3>
+        <p class="muted">司机到达发货现场并装货完成后，核对货物清单和数量，再签名、拍照、定位并确认提货。若刚完成 Step 1 且已在现场，可直接继续，无需重新扫码。</p>
+        <label class="confirm-row">
+          <input id="goodsChecked" type="checkbox" />
+          <span>我已现场核对发货清单和数量无误</span>
+        </label>
+        <div class="field">
+          <label>手写签名</label>
+          <canvas id="signatureCanvas" class="signature-canvas"></canvas>
+          <div class="signature-actions">
+            <button id="clearSignatureButton" type="button" class="secondary-btn">清空签名</button>
+            <span class="muted small-text">请在上方手写签名后再提交</span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="loadingPhotoFile">装车照片</label>
+          <input id="loadingPhotoFile" type="file" accept="image/*" capture="environment" />
+        </div>
+        <p id="gpsStatus" class="muted small-text">提交时将自动采集定位和时间戳。</p>
+        <button id="step2Button" class="primary-btn">核对无误并确认提货</button>
+      </section>
+
+      <section class="card notice-card">
+        <h3>隐私说明</h3>
+        <p class="muted">签名、装车照、定位和时间戳仅用于物流交接凭证与责任追溯，不用于其他用途。</p>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
