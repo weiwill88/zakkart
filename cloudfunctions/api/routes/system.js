@@ -1,4 +1,8 @@
+const { isSmsConfigured } = require('../utils/tencent-sms');
+
 async function health() {
+  const smsMock = String(process.env.SMS_MOCK || '').toLowerCase() === 'true' || !isSmsConfigured();
+
   return {
     ok: true,
     service: 'zakkart-api',
@@ -6,7 +10,7 @@ async function health() {
     timestamp: new Date().toISOString(),
     features: {
       sms_login: true,
-      sms_mock: true,
+      sms_mock: smsMock,
       wechat_login: false,
       seed_users: true
     }

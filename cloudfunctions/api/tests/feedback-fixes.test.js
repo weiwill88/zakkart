@@ -105,3 +105,115 @@ test('h5 ensureDriverObject only normalizes in memory and avoids empty database 
   assert.deepEqual(shipment.driver, {})
   assert.equal(updateCalled, false)
 })
+
+test('sms login sends real code through provider and verifies stored hash', async () => {
+  const restoreEnv = withEnv({
+    SMS_SECRET_ID: 'test-secret-id',
+    SMS_SECRET_KEY: 'test-secret-key',
+    SMS_SDK_APP_ID: '1400000000',
+    SMS_SIGN_NAME: '测试签名',
+    SMS_TEMPLATE_ID: '123456',
+    SMS_MOCK: '',
+    JWT_SECRET: 'test-jwt-secret'
+  })
+  const user = {
+    _id: 'user_001',
+    phone: '13900000000',
+    name: '测试用户',
+    role: 'admin',
+    org_id: 'org_platform',
+    permissions: []
+  }
+  const updates = []
+  let sentCode = ''
+
+  try {
+    const authRoutes = loadWithMocks('../routes/auth', {
+      '../config/database': {
+        getCollection: () => ({
+          where: (query) => ({
+            limit: () => ({
+              get: async () => ({ data: query.phone === user.phone ? [user] : [] })
+            })
+          }),
+          doc: () => ({
+            get: async () => ({ data: user }),
+            update: async ({ data }) => {
+              updates.push(data)
+              Object.assign(user, data)
+            }
+          })
+        })
+      },
+      '../utils/tencent-sms': {
+        isSmsConfigured: () => true,
+        sendTencentSms: async ({ code }) => {
+          sentCode = code
+          return { requestId: 'req_001' }
+        }
+      }
+    })
+
+    const sendResult = await authRoutes['auth.smsSend']({ params: { mobile: user.phone } })
+    assert.equal(sendResult.sent, true)
+    assert.equal(sendResult.mock, false)
+    assert.equal(sendResult.mock_code, undefined)
+    assert.match(sentCode, /^\d{6}$/)
+    assert.equal(typeof user.sms_verification?.code_hash, 'string')
+
+    const loginResult = await authRoutes['auth.smsLogin']({ params: { mobile: user.phone, code: sentCode } })
+    assert.equal(loginResult.user.phone, user.phone)
+    assert.equal(typeof loginResult.token, 'string')
+    assert.equal(user.sms_verification, null)
+    assert.ok(updates.some((item) => item.last_login_at && item.sms_verification === null))
+  } finally {
+    restoreEnv()
+  }
+})
+
+test('tencent sms template params support explicit and fallback modes', () => {
+  const { __test } = require('../utils/tencent-sms')
+  const restoreEnv = withEnv({
+    SMS_TEMPLATE_PARAMS: '',
+    SMS_TEMPLATE_PARAM_MODE: ''
+  })
+
+  try {
+    assert.deepEqual(__test.getTemplateParamCandidates('123456', 5), [
+      ['123456'],
+      ['123456', '5']
+    ])
+  } finally {
+    restoreEnv()
+  }
+
+  const restoreExplicitEnv = withEnv({
+    SMS_TEMPLATE_PARAMS: '{code},{expireMinutes},Zakkart',
+    SMS_TEMPLATE_PARAM_MODE: ''
+  })
+  try {
+    assert.deepEqual(__test.getTemplateParamCandidates('654321', 10), [
+      ['654321', '10', 'Zakkart']
+    ])
+  } finally {
+    restoreExplicitEnv()
+  }
+})
+
+function withEnv(values) {
+  const previous = {}
+  for (const [key, value] of Object.entries(values)) {
+    previous[key] = process.env[key]
+    process.env[key] = value
+  }
+
+  return () => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) {
+        delete process.env[key]
+      } else {
+        process.env[key] = value
+      }
+    }
+  }
+}

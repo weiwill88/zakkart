@@ -2,9 +2,9 @@
   <div class="login-page">
     <div class="login-panel">
       <div class="login-header">
-        <div class="login-badge">Phase 0</div>
+        <div class="login-badge">正式登录</div>
         <h1>Zakkart 供应链管理系统</h1>
-        <p>PC 端正式开发已启动。当前登录链路接入云函数 `auth.smsLogin`，开发期验证码固定为 `123456`。</p>
+        <p>请输入已开通账号的手机号，并使用短信验证码登录系统。</p>
       </div>
 
       <el-form label-position="top" :model="form" @submit.prevent="handleLogin">
@@ -22,14 +22,14 @@
         </el-form-item>
 
         <el-alert
-          title="开发说明"
+          title="登录说明"
           type="info"
           :closable="false"
           show-icon
           style="margin-bottom: 20px"
         >
           <template #default>
-            已预置两个初始管理员手机号：<code>17521723946</code>、<code>13262515903</code>。供应商账号需先在供应商详情页的“联系人/成员”中创建。
+            管理员账号由甲方权限管理维护；供应商账号需先在供应商详情页的“联系人/成员”中创建。
           </template>
         </el-alert>
 
@@ -72,7 +72,7 @@ async function handleSendCode() {
 
   try {
     await authStore.sendSmsCode(form.mobile)
-    ElMessage.success('验证码已发送，开发阶段固定为 123456')
+    ElMessage.success('验证码已发送')
     startCountdown()
   } catch (error) {
     ElMessage.error(error.message || '发送失败')

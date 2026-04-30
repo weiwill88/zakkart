@@ -1,7 +1,12 @@
+const crypto = require('crypto');
 const { getCollection } = require('../config/database');
 const { signToken } = require('../utils/token');
+const { sendTencentSms, isSmsConfigured } = require('../utils/tencent-sms');
 
 const DEV_SMS_CODE = process.env.DEV_SMS_CODE || '123456';
+const SMS_EXPIRES_SECONDS = Number(process.env.SMS_EXPIRES_SECONDS || 300);
+const SMS_SEND_INTERVAL_SECONDS = Number(process.env.SMS_SEND_INTERVAL_SECONDS || 60);
+const SMS_MAX_ATTEMPTS = Number(process.env.SMS_MAX_ATTEMPTS || 5);
 const USERS_COLLECTION = 'users';
 const ROLE_NAME_MAP = {
   super_admin: '超级管理员',
@@ -57,12 +62,60 @@ async function smsSend({ params }) {
     throw error;
   }
 
+  const dbUser = await findUserByPhone(mobile);
+  const fallbackUser = seededUsers[mobile] || null;
+
+  if (!dbUser && !fallbackUser) {
+    const error = new Error('该手机号未注册，请先在组织成员中添加账号');
+    error.code = 403;
+    throw error;
+  }
+
+  if (shouldUseMockSms()) {
+    return {
+      mobile,
+      sent: true,
+      mock: true,
+      expires_in_seconds: SMS_EXPIRES_SECONDS,
+      message: '开发阶段使用固定验证码'
+    };
+  }
+
+  if (!dbUser) {
+    const error = new Error('该手机号仅存在于本地种子账号，请先导入 users 集合后再启用短信登录');
+    error.code = 403;
+    throw error;
+  }
+
+  assertCanSendSms(dbUser);
+
+  const code = createSmsCode();
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + SMS_EXPIRES_SECONDS * 1000).toISOString();
+
+  await sendTencentSms({
+    mobile,
+    code,
+    expireMinutes: Math.ceil(SMS_EXPIRES_SECONDS / 60)
+  });
+
+  await getCollection(USERS_COLLECTION).doc(dbUser._id).update({
+    data: {
+      sms_verification: {
+        code_hash: hashSmsCode(mobile, code),
+        expires_at: expiresAt,
+        requested_at: now.toISOString(),
+        attempts: 0
+      }
+    }
+  });
+
   return {
     mobile,
     sent: true,
-    mock_code: DEV_SMS_CODE,
-    expires_in_seconds: 300,
-    message: '开发阶段使用固定验证码'
+    mock: false,
+    expires_in_seconds: SMS_EXPIRES_SECONDS,
+    message: '验证码已发送'
   };
 }
 
@@ -82,12 +135,6 @@ async function smsLogin({ params }) {
     throw error;
   }
 
-  if (code !== DEV_SMS_CODE) {
-    const error = new Error('验证码错误');
-    error.code = 401;
-    throw error;
-  }
-
   const dbUser = await findUserByPhone(mobile);
   const fallbackUser = seededUsers[mobile] || null;
 
@@ -97,6 +144,22 @@ async function smsLogin({ params }) {
     throw error;
   }
 
+  if (shouldUseMockSms()) {
+    if (code !== DEV_SMS_CODE) {
+      const error = new Error('验证码错误');
+      error.code = 401;
+      throw error;
+    }
+  } else {
+    if (!dbUser) {
+      const error = new Error('该手机号仅存在于本地种子账号，请先导入 users 集合后再启用短信登录');
+      error.code = 403;
+      throw error;
+    }
+
+    await verifySmsCode(dbUser, mobile, code);
+  }
+
   const user = normalizeUser(dbUser || fallbackUser, {
     last_login_at: new Date().toISOString()
   });
@@ -104,7 +167,8 @@ async function smsLogin({ params }) {
   if (dbUser) {
     await getCollection(USERS_COLLECTION).doc(dbUser._id).update({
       data: {
-        last_login_at: user.last_login_at
+        last_login_at: user.last_login_at,
+        sms_verification: null
       }
     });
   }
@@ -169,8 +233,75 @@ function normalizeUser(user, overrides = {}) {
   };
 }
 
+function shouldUseMockSms() {
+  return String(process.env.SMS_MOCK || '').toLowerCase() === 'true' || !isSmsConfigured();
+}
+
+function assertCanSendSms(user) {
+  const requestedAt = user.sms_verification?.requested_at;
+  if (!requestedAt) {
+    return;
+  }
+
+  const elapsedSeconds = (Date.now() - new Date(requestedAt).getTime()) / 1000;
+  if (elapsedSeconds < SMS_SEND_INTERVAL_SECONDS) {
+    const error = new Error(`验证码发送过于频繁，请 ${Math.ceil(SMS_SEND_INTERVAL_SECONDS - elapsedSeconds)} 秒后再试`);
+    error.code = 429;
+    throw error;
+  }
+}
+
+async function verifySmsCode(user, mobile, code) {
+  const verification = user.sms_verification || {};
+  const expiresAt = verification.expires_at ? new Date(verification.expires_at).getTime() : 0;
+
+  if (!verification.code_hash || !expiresAt || expiresAt <= Date.now()) {
+    const error = new Error('验证码已过期，请重新获取');
+    error.code = 401;
+    throw error;
+  }
+
+  const attempts = Number(verification.attempts || 0);
+  if (attempts >= SMS_MAX_ATTEMPTS) {
+    const error = new Error('验证码错误次数过多，请重新获取');
+    error.code = 401;
+    throw error;
+  }
+
+  if (verification.code_hash !== hashSmsCode(mobile, code)) {
+    await getCollection(USERS_COLLECTION).doc(user._id).update({
+      data: {
+        sms_verification: {
+          ...verification,
+          attempts: attempts + 1
+        }
+      }
+    });
+
+    const error = new Error('验证码错误');
+    error.code = 401;
+    throw error;
+  }
+}
+
+function createSmsCode() {
+  return String(crypto.randomInt(100000, 1000000));
+}
+
+function hashSmsCode(mobile, code) {
+  return crypto
+    .createHash('sha256')
+    .update(`${mobile}:${code}:${process.env.JWT_SECRET || ''}`)
+    .digest('hex');
+}
+
 module.exports = {
   'auth.smsSend': smsSend,
   'auth.smsLogin': smsLogin,
-  'auth.me': me
+  'auth.me': me,
+  __test: {
+    hashSmsCode,
+    shouldUseMockSms,
+    verifySmsCode
+  }
 };
